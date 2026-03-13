@@ -528,20 +528,25 @@ function closeMobile(){
     var links = document.querySelector('.nav-links');
     var mobile = document.getElementById('mobileMenu');
     if(links) {
-      var a = document.createElement('a');
-      a.href = 'pricing.html';
-      a.textContent = 'Pricing';
-      // Insert before last child
-      var ref = links.querySelector('a[href="contact.html"]');
-      if(ref) links.insertBefore(a, ref);
+      // Only add Pricing if not already in nav
+      if(!links.querySelector('a[href="pricing.html"]')){
+        var a = document.createElement('a');
+        a.href = 'pricing.html';
+        a.textContent = 'Pricing';
+        var ref = links.querySelector('a[href="contact.html"]');
+        if(ref) links.insertBefore(a, ref);
+      }
     }
     if(mobile) {
-      var ma = document.createElement('a');
-      ma.href = 'pricing.html';
-      ma.textContent = 'Pricing';
-      ma.onclick = function(){closeMobile();};
-      var mref = mobile.querySelector('a[href="contact.html"]');
-      if(mref) mobile.insertBefore(ma, mref);
+      // Only add Pricing to mobile if not already there
+      if(!mobile.querySelector('a[href="pricing.html"]')){
+        var ma = document.createElement('a');
+        ma.href = 'pricing.html';
+        ma.textContent = 'Pricing';
+        ma.onclick = function(){closeMobile();};
+        var mref = mobile.querySelector('a[href="contact.html"]');
+        if(mref) mobile.insertBefore(ma, mref);
+      }
     }
   }
 })();
