@@ -1,6 +1,15 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<script>
+// Instant login-state class on <html> before render
+if(localStorage.getItem('hhLoggedIn')==='true'){document.documentElement.classList.add('is-logged-in');}
+</script>
+<style>
+/* Hide Login button instantly when logged in — no flash */
+html.is-logged-in .nav-btn-outline[href="login.html"],
+html.is-logged-in a.nav-btn-outline { display:none !important; }
+</style>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>Login — The Hook Hustlers</title>
@@ -29,14 +38,16 @@
 }
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
 html{scroll-behavior:smooth;}
-body{background:var(--black);color:var(--white);font-family:'Rajdhani',sans-serif;font-weight:400;line-height:1.6;overflow-x:hidden;cursor:none;}
+body{background:var(--black);color:var(--white);font-family:'Rajdhani',sans-serif;font-weight:400;line-height:1.6;overflow-x:hidden;cursor:none;word-break:break-word;}
 .cursor{position:fixed;width:10px;height:10px;background:var(--gold);border-radius:50%;pointer-events:none;z-index:9999;transform:translate(-50%,-50%);transition:transform .1s;mix-blend-mode:difference;}
-.cursor-ring{position:fixed;width:36px;height:36px;border:1px solid var(--gold);border-radius:50%;pointer-events:none;z-index:9998;transform:translate(-50%,-50%);transition:width .15s ease,height .15s ease,opacity .15s ease;opacity:.6;}
+.cursor-ring{position:fixed;width:36px;height:36px;border:1px solid var(--gold);border-radius:50%;pointer-events:none;z-index:9998;transform:translate(-50%,-50%);transition:width .15s ease,height .15s ease,opacity .15s ease;opacity:.6;}@media(max-width:768px){.cursor,.cursor-ring{display:none!important;}body{cursor:auto!important;}}
 #particles{position:fixed;inset:0;z-index:0;pointer-events:none;}
 nav{position:fixed;top:0;left:0;right:0;z-index:100;display:flex;align-items:center;justify-content:space-between;padding:18px 64px;background:rgba(5,5,8,0.85);backdrop-filter:blur(24px);border-bottom:1px solid var(--border);}
 .nav-logo{font-family:'Bebas Neue',sans-serif;font-size:1.6rem;letter-spacing:.08em;background:linear-gradient(135deg,var(--gold),var(--gold2),var(--blue));-webkit-background-clip:text;-webkit-text-fill-color:transparent;text-decoration:none;}
 .nav-links{display:flex;gap:32px;}
 .nav-links a{font-family:'Rajdhani',sans-serif;font-size:.82rem;color:var(--muted);transition:color .2s;letter-spacing:.12em;text-transform:uppercase;font-weight:500;text-decoration:none;}
+.nav-links a[href="home.html"]{color:rgba(240,237,232,0.65);font-weight:600;}
+.nav-links a[href="home.html"]:hover{color:var(--gold);}
 .nav-links a:hover,.nav-links a.active{color:var(--gold);}
 .nav-right{display:flex;gap:12px;align-items:center;}
 .nav-btn{font-family:'Rajdhani',sans-serif;font-weight:600;font-size:.82rem;padding:9px 22px;border-radius:6px;letter-spacing:.08em;text-transform:uppercase;text-decoration:none;transition:all .2s;}
@@ -53,7 +64,7 @@ nav{position:fixed;top:0;left:0;right:0;z-index:100;display:flex;align-items:cen
 .mobile-menu.open{opacity:1;pointer-events:all;}
 .mobile-menu a{font-family:'Bebas Neue',sans-serif;font-size:2.4rem;letter-spacing:.1em;color:var(--white);text-decoration:none;transition:color .2s;}
 .mobile-menu a:hover{color:var(--gold);}
-.ticker-wrap{background:linear-gradient(90deg,var(--navy),#0d1f3c,var(--navy));border-bottom:1px solid rgba(26,108,255,0.2);padding:10px 0;overflow:hidden;position:fixed;top:61px;left:0;right:0;z-index:99;}
+.ticker-wrap{background:linear-gradient(90deg,var(--navy),#0d1f3c,var(--navy));border-bottom:1px solid rgba(26,108,255,0.2);padding:9px 0;overflow:hidden;position:fixed;top:61px;left:0;right:0;z-index:10000;}
 .ticker{display:flex;gap:60px;animation:ticker 30s linear infinite;white-space:nowrap;}
 .ticker-item{font-family:'Rajdhani',sans-serif;font-size:.78rem;letter-spacing:.1em;color:rgba(240,237,232,0.6);display:flex;align-items:center;gap:8px;flex-shrink:0;}
 .ticker-item span{color:var(--emerald);font-weight:600;}
@@ -98,7 +109,7 @@ footer{background:var(--deep);border-top:1px solid var(--border);padding:72px 64
 @keyframes fadeUp{from{opacity:0;transform:translateY(24px);}to{opacity:1;transform:translateY(0);}}
 @keyframes pulse{0%,100%{opacity:1;transform:scale(1);}50%{opacity:.4;transform:scale(.7);}}
 @media(max-width:1024px){nav{padding:16px 32px;}section{padding:90px 32px;}.page-hero{padding:140px 32px 60px;}.footer-inner{grid-template-columns:1fr 1fr;gap:40px;}}
-@media(max-width:768px){nav{padding:14px 20px;}.nav-links,.nav-right{display:none;}.hamburger{display:flex;}.mobile-menu{display:flex;}section{padding:72px 20px;}.page-hero{padding:120px 20px 48px;}.footer-inner{grid-template-columns:1fr;gap:32px;}.footer-bottom{flex-direction:column;text-align:center;}.footer-legal{flex-wrap:wrap;justify-content:center;gap:16px;}.ticker-wrap{top:57px;}}
+@media(max-width:768px){nav{padding:14px 20px;}.nav-links,.nav-right{display:none;}.hamburger{display:flex;}.mobile-menu{display:flex;}section{padding:72px 20px;}.page-hero{padding:120px 20px 48px;}.footer-inner{grid-template-columns:1fr;gap:32px;}.footer-bottom{flex-direction:column;text-align:center;}.footer-legal{flex-wrap:wrap;justify-content:center;gap:16px;}.ticker-wrap{top:57px;} .page-hero{padding-top:150px!important;}}
 
 .auth-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:120px 24px 60px;position:relative;z-index:1;}
 .auth-mesh{position:fixed;inset:0;z-index:0;background:radial-gradient(ellipse 80% 60% at 50% 0%,rgba(212,168,67,.06) 0%,transparent 70%),radial-gradient(ellipse 50% 40% at 90% 80%,rgba(26,108,255,.05) 0%,transparent 60%);}
@@ -120,10 +131,192 @@ footer{background:var(--deep);border-top:1px solid var(--border);padding:72px 64
 .form-submit:hover{transform:translateY(-2px);box-shadow:0 10px 30px var(--gold-glow);}
 .auth-switch{text-align:center;margin-top:20px;font-size:.82rem;color:var(--muted);}
 .auth-switch a{color:var(--gold);text-decoration:none;font-weight:700;}
+.google-btn{width:100%;display:flex;align-items:center;justify-content:center;gap:12px;background:#fff;color:#1f1f1f;font-family:'Rajdhani',sans-serif;font-weight:700;font-size:.9rem;padding:13px 24px;border-radius:8px;border:none;cursor:pointer;letter-spacing:.04em;transition:all .2s;box-shadow:0 2px 8px rgba(0,0,0,0.3);margin-bottom:4px;}
+.google-btn:hover{background:#f5f5f5;transform:translateY(-1px);box-shadow:0 6px 20px rgba(0,0,0,0.4);}
 .auth-divider{display:flex;align-items:center;gap:12px;margin:20px 0;color:var(--muted);font-size:.75rem;letter-spacing:.08em;text-transform:uppercase;}
 .auth-divider::before,.auth-divider::after{content:"";flex:1;height:1px;background:var(--border2);}
 @media(max-width:480px){.auth-box{padding:36px 24px;}}
 </style>
+
+<style id="global-mobile-fix">
+/* ══════════════════════════════════════
+   GLOBAL MOBILE FIX — all pages
+   Target: screens ≤768px
+══════════════════════════════════════ */
+@media(max-width:768px){
+
+  /* ── SPACING ── */
+  section, .filter-section, .founder-section-about,
+  .about-mission, .inv-type-section {
+    padding: 60px 18px !important;
+  }
+  .page-hero { padding: 148px 18px 56px !important; }
+  .sec-inner { padding: 0 !important; }
+
+  /* ── TYPOGRAPHY ── */
+  .sec-title { font-size: clamp(1.8rem, 8vw, 3rem) !important; }
+  .sec-sub { font-size: .88rem !important; }
+  h1 { font-size: clamp(2rem, 10vw, 4rem) !important; }
+  h2 { font-size: clamp(1.6rem, 7vw, 3rem) !important; }
+
+  /* ── ALL INLINE GRIDS → single column ── */
+  [style*="grid-template-columns:1fr 1fr"],
+  [style*="grid-template-columns: 1fr 1fr"],
+  [style*="grid-template-columns:1fr 1.6fr"],
+  [style*="grid-template-columns:1fr 2fr"],
+  [style*="grid-template-columns:2fr 1fr"],
+  [style*="grid-template-columns:1fr 1.5fr"],
+  [style*="grid-template-columns:repeat(2"],
+  [style*="grid-template-columns:repeat(3"],
+  [style*="grid-template-columns:repeat(4"],
+  [style*="grid-template-columns:repeat(5"],
+  [style*="grid-template-columns:3fr 1fr"],
+  [style*="grid-template-columns:140px 1fr"],
+  [style*="grid-template-columns:1fr 40px 1fr"] {
+    grid-template-columns: 1fr !important;
+    gap: 24px !important;
+  }
+
+  /* ── NAMED GRID CLASSES → single column ── */
+  .why-grid, .checklist-grid, .landscape-split,
+  .inv-stat-grid, .how-grid, .sectors-grid,
+  .startups-grid, .inv-grid, .mission-grid,
+  .founder-about-inner, .value-grid,
+  .roadmap-item, .footer-inner { 
+    grid-template-columns: 1fr !important; 
+    gap: 20px !important;
+  }
+
+  /* ── TIMELINE middle column hide ── */
+  [style*="grid-template-columns:1fr 40px 1fr"] > div:nth-child(2) {
+    display: none !important;
+  }
+  [style*="grid-template-columns:1fr 40px 1fr"] > div:nth-child(1),
+  [style*="grid-template-columns:1fr 40px 1fr"] > div:nth-child(3) {
+    text-align: left !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    padding-top: 0 !important;
+  }
+
+  /* ── VERIFICATION STEPS → 2 col on mobile ── */
+  [style*="grid-template-columns:repeat(5,1fr)"] {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 20px !important;
+  }
+
+  /* ── COMPARISON TABLE → scrollable ── */
+  table { font-size: .75rem !important; }
+  table td, table th { padding: 10px 10px !important; }
+  th div { font-size: .7rem !important; padding: 8px !important; }
+
+  /* ── HERO ACTIONS → stack ── */
+  .hero-actions, [style*="display:flex"][style*="gap:20px"],
+  [style*="display:flex"][style*="gap:12px"] {
+    flex-wrap: wrap !important;
+  }
+  .hero-actions a { text-align: center; width: 100%; }
+
+  /* ── STAT CARDS → 2 col ── */
+  .inv-stat-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+
+  /* ── CTA SECTION ── */
+  .cta-section { padding: 72px 18px !important; }
+
+  /* ── WAITLIST INPUTS → stack ── */
+  .waitlist-input-wrap, 
+  [style*="display:flex"][style*="flex-wrap:wrap"] {
+    flex-direction: column !important;
+  }
+  .waitlist-input, .search-input { min-width: unset !important; width: 100% !important; }
+
+  /* ── FOOTER ── */
+  footer { padding: 48px 18px 0 !important; }
+  .footer-inner { grid-template-columns: 1fr !important; gap: 28px !important; }
+  .footer-bottom { flex-direction: column !important; text-align: center !important; }
+  .footer-legal { flex-wrap: wrap !important; justify-content: center !important; gap: 12px !important; }
+
+  /* ── FILTER CHIPS ── */
+  .filter-chip { font-size: .7rem !important; padding: 6px 14px !important; }
+
+  /* ── SECTOR CARDS → 1 col ── */
+  .sectors-grid, [style*="grid-template-columns:repeat(3,1fr)"],
+  [style*="grid-template-columns:repeat(auto-fill,minmax(260px"],
+  [style*="grid-template-columns:repeat(auto-fill,minmax(280px"],
+  [style*="grid-template-columns:repeat(auto-fill,minmax(220px"],
+  [style*="grid-template-columns:repeat(auto-fill,minmax(200px"] {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* ── JOURNEY SIDE-BY-SIDE → stack ── */
+  .how-grid { grid-template-columns: 1fr !important; }
+  .how-divider { display: none !important; }
+  .journey-col { padding: 0 !important; }
+
+  /* ── STAT NUMBERS FONT SIZE ── */
+  .stat-number, .inv-stat-num, .spots-counter { 
+    font-size: clamp(2rem, 8vw, 3rem) !important; 
+  }
+
+  /* ── FOUNDER PHOTO ── */
+  .founder-photo, .founder-photo-wrap { 
+    max-width: 280px !important; 
+    margin: 0 auto !important; 
+  }
+
+  /* ── CHECKLIST GRID ── */
+  .checklist-grid { grid-template-columns: 1fr !important; }
+
+  /* ── FUNDING READINESS CARD ── */
+  .checker-q-head { padding: 14px 16px !important; }
+  .checker-options { padding: 0 16px 14px !important; }
+  .checker-opt { font-size: .8rem !important; }
+
+  /* ── ABOUT TIMELINE ── */
+  .roadmap-item { grid-template-columns: 1fr !important; }
+  .rm-date { text-align: left !important; }
+  .roadmap-item::before { display: none !important; }
+
+  /* ── INLINE PADDING OVERRIDES ── */
+  [style*="padding:80px 64px"],
+  [style*="padding:100px 64px"],
+  [style*="padding:120px 64px"] {
+    padding: 56px 18px !important;
+  }
+  [style*="padding:48px"] { padding: 28px 18px !important; }
+  [style*="padding:64px"] { padding: 28px 18px !important; }
+
+  /* ── HIDE ABSOLUTE DECORATIVE ELEMENTS ON MOBILE ── */
+  .page-hero-lines { display: none !important; }
+
+  /* ── HOW IT WORKS 5-STEP PROCESS ── */
+  [style*="repeat(5,1fr)"] {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 20px !important;
+  }
+
+  /* ── WAITLIST CARD ── */
+  .waitlist-card { padding: 32px 20px !important; }
+  .spots-counter { font-size: 3.5rem !important; }
+
+  /* ── NAV ── */
+  nav { padding: 14px 18px !important; }
+}
+
+@media(max-width:480px){
+  .inv-stat-grid { grid-template-columns: 1fr 1fr !important; }
+  .sec-title { font-size: clamp(1.6rem, 9vw, 2.4rem) !important; }
+  .page-hero { padding: 140px 14px 48px !important; }
+  section { padding: 48px 14px !important; }
+  [style*="padding:80px 64px"],
+  [style*="padding:100px 64px"],
+  [style*="padding:120px 64px"] { padding: 48px 14px !important; }
+  .filter-section { padding: 120px 14px 24px !important; }
+}
+</style>
+
 </head>
 <body>
 <div class="cursor" id="cursor"></div>
@@ -134,17 +327,16 @@ footer{background:var(--deep);border-top:1px solid var(--border);padding:72px 64
   <a href="startups.html" onclick="closeMobile()">Startups</a>
   <a href="investors.html" onclick="closeMobile()">Investors</a>
   <a href="about.html" onclick="closeMobile()">About</a>
-  <a href="pricing.html" onclick="closeMobile()">Pricing</a>
   <a href="contact.html" onclick="closeMobile()">Contact</a>
   <a href="signup.html" onclick="closeMobile()" style="color:var(--gold)">Join Now →</a>
 </div>
 <nav>
   <a href="home.html" class="nav-logo">THE HOOK HUSTLERS</a>
   <div class="nav-links">
+    <a href="home.html">Home</a>
     <a href="startups.html">Startups</a>
     <a href="investors.html">Investors</a>
     <a href="about.html">About</a>
-    <a href="pricing.html">Pricing</a>
     <a href="contact.html">Contact</a>
   </div>
   <div class="nav-right">
@@ -155,39 +347,192 @@ footer{background:var(--deep);border-top:1px solid var(--border);padding:72px 64
 </nav>
 <div class="ticker-wrap">
   <div class="ticker">
-    <div class="ticker-item"><div class="dot"></div>🔥 TechVentures India raised <span>₹2.4 Cr</span> — Series A</div>
-    <div class="ticker-item"><div class="dot"></div>🚀 AgriSmart Bharat secured <span>₹85 L</span> — Seed</div>
-    <div class="ticker-item"><div class="dot"></div>💡 EduReach connects with Peak XV Partners</div>
-    <div class="ticker-item"><div class="dot"></div>🌱 CleanEnergy UP raises <span>₹1.2 Cr</span> — Pre-Series A</div>
-    <div class="ticker-item"><div class="dot"></div>🏥 HealthFirst Bihar secured <span>₹60 L</span> — Angel</div>
-    <div class="ticker-item"><div class="dot"></div>🤖 DeepTech Bangalore secured <span>₹5 Cr</span> — Series B</div>
-    <div class="ticker-item"><div class="dot"></div>🔥 TechVentures India raised <span>₹2.4 Cr</span> — Series A</div>
-    <div class="ticker-item"><div class="dot"></div>🚀 AgriSmart Bharat secured <span>₹85 L</span> — Seed</div>
-    <div class="ticker-item"><div class="dot"></div>💡 EduReach connects with Peak XV Partners</div>
-    <div class="ticker-item"><div class="dot"></div>🌱 CleanEnergy UP raises <span>₹1.2 Cr</span> — Pre-Series A</div>
-    <div class="ticker-item"><div class="dot"></div>🏥 HealthFirst Bihar secured <span>₹60 L</span> — Angel</div>
-    <div class="ticker-item"><div class="dot"></div>🤖 DeepTech Bangalore secured <span>₹5 Cr</span> — Series B</div>
+    <div class="ticker-item"><div class="dot"></div>🇮🇳 India has <span>6,53,000+ DPIIT-registered startups</span> — and most investors haven't heard of 99% of them</div>
+    <div class="ticker-item"><div class="dot"></div>📊 Only <span>2% of Indian startups</span> ever receive formal funding — The Hook Hustlers is here to change that ratio</div>
+    <div class="ticker-item"><div class="dot"></div>🏙️ <span>48% of India's startups</span> are from Tier 2 & 3 cities — yet most VC offices are in Bandra and Koramangala</div>
+    <div class="ticker-item"><div class="dot"></div>🏛️ Government Fund of Funds — <span>₹10,000 Crore</span> allocated for Indian startups. Is yours getting its share?</div>
+    <div class="ticker-item"><div class="dot"></div>🤖 Our AI doesn't sleep, doesn't have a bad day, and never loses your pitch deck — <span>AI-powered matching, 24/7</span></div>
+    <div class="ticker-item"><div class="dot"></div>🦁 <span>India produced 125 unicorns</span> — the next one could be from Lucknow, Bhopal or Patna. We're building for that future.</div>
+    <div class="ticker-item"><div class="dot"></div>📈 Indian startup funding is projected to recover to <span>$11.5–13.8 Billion in 2026</span> — the opportunity is now</div>
+    <div class="ticker-item"><div class="dot"></div>⚡ Every verified startup gets a <span>Funding Readiness Score</span> — know exactly where you stand before you pitch</div>
+    <div class="ticker-item"><div class="dot"></div>🇮🇳 India has <span>6,53,000+ DPIIT-registered startups</span> — and most investors haven't heard of 99% of them</div>
+    <div class="ticker-item"><div class="dot"></div>📊 Only <span>2% of Indian startups</span> ever receive formal funding — The Hook Hustlers is here to change that ratio</div>
+    <div class="ticker-item"><div class="dot"></div>🏙️ <span>48% of India's startups</span> are from Tier 2 & 3 cities — yet most VC offices are in Bandra and Koramangala</div>
+    <div class="ticker-item"><div class="dot"></div>🏛️ Government Fund of Funds — <span>₹10,000 Crore</span> allocated for Indian startups. Is yours getting its share?</div>
+    <div class="ticker-item"><div class="dot"></div>🤖 Our AI doesn't sleep, doesn't have a bad day, and never loses your pitch deck — <span>AI-powered matching, 24/7</span></div>
+    <div class="ticker-item"><div class="dot"></div>🦁 <span>India produced 125 unicorns</span> — the next one could be from Lucknow, Bhopal or Patna. We're building for that future.</div>
+    <div class="ticker-item"><div class="dot"></div>📈 Indian startup funding is projected to recover to <span>$11.5–13.8 Billion in 2026</span> — the opportunity is now</div>
+    <div class="ticker-item"><div class="dot"></div>⚡ Every verified startup gets a <span>Funding Readiness Score</span> — know exactly where you stand before you pitch</div>
   </div>
+</div>
 </div>
 
 <div class="auth-mesh"></div>
 <div class="auth-wrap">
   <div class="auth-box">
     <div class="auth-logo"><a href="home.html">THE HOOK HUSTLERS</a></div>
-    <h2 class="auth-title">Welcome Back</h2>
-    <p class="auth-sub">Login to access your dashboard and continue your funding journey 🚀</p>
-    <div class="auth-tabs">
-      <div class="auth-tab active" onclick="this.parentElement.querySelectorAll('.auth-tab').forEach(t=>t.classList.remove('active'));this.classList.add('active')">Startup</div>
-      <div class="auth-tab" onclick="this.parentElement.querySelectorAll('.auth-tab').forEach(t=>t.classList.remove('active'));this.classList.add('active')">Investor</div>
+
+    <!-- Dynamic banner shown when redirected from a signup link -->
+    <div id="nextBanner" style="display:none;background:linear-gradient(135deg,rgba(212,168,67,0.1),rgba(212,168,67,0.04));border:1px solid rgba(212,168,67,0.2);border-radius:12px;padding:14px 18px;margin-bottom:24px;text-align:center;">
+      <div style="font-size:.72rem;letter-spacing:.12em;text-transform:uppercase;color:var(--gold);font-weight:700;margin-bottom:4px;">One Step First</div>
+      <div style="font-size:.82rem;color:var(--muted);line-height:1.6;">Login or create your account below — then we'll take you straight to registration.</div>
     </div>
-    <div class="form-group"><label>Email Address</label><input class="form-input" type="email" placeholder="your@email.com"/></div>
-    <div class="form-group"><label>Password</label><input class="form-input" type="password" placeholder="Enter your password"/></div>
+
+    <h2 class="auth-title" id="loginTitle">Welcome Back</h2>
+    <p class="auth-sub" id="loginSub">Login to access your dashboard and continue your funding journey 🚀</p>
+
+    <div class="auth-tabs">
+      <div class="auth-tab active" onclick="switchTab(this)">🚀 Startup</div>
+      <div class="auth-tab" onclick="switchTab(this)">💼 Investor</div>
+    </div>
+
+    <div class="form-group"><label>Email Address</label><input class="form-input" id="l_email" type="email" placeholder="your@email.com"/></div>
+    <div class="form-group"><label>Password</label><input class="form-input" id="l_pass" type="password" placeholder="Enter your password"/></div>
     <div style="text-align:right;margin-bottom:20px;"><a href="#" style="font-size:.78rem;color:var(--gold);text-decoration:none;">Forgot password?</a></div>
-    <button class="form-submit" onclick="alert('Login functionality coming soon! Platform launching shortly. 🚀')">Login →</button>
-    <div class="auth-divider">or</div>
-    <div class="auth-switch">Don't have an account? <a href="signup.html">Sign Up Free</a></div>
+
+    <!-- Google Sign In Button -->
+    <button class="google-btn" onclick="googleSignIn()">
+      <svg width="20" height="20" viewBox="0 0 48 48" style="flex-shrink:0;">
+        <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+        <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+        <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+        <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+        <path fill="none" d="M0 0h48v48H0z"/>
+      </svg>
+      Continue with Google
+    </button>
+
+    <div class="auth-divider">or sign in with email</div>
+
+    <button class="form-submit" onclick="doLogin()">Login & Continue →</button>
+
+    <div class="auth-divider">new here?</div>
+    <div class="auth-switch">Don't have an account yet? <a href="signup.html" id="signupLink" style="color:var(--gold);font-weight:700;">Create Account →</a></div>
   </div>
 </div>
+
+<!-- Google Sign-In SDK -->
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+
+<script>
+// ── GOOGLE CLIENT ID ──
+// Replace this with your actual Google OAuth Client ID from console.cloud.google.com
+var GOOGLE_CLIENT_ID = '11657716794-qp7vu5t2toegcci3l4quqke1ft5rrdk8.apps.googleusercontent.com';
+
+function googleSignIn() {
+  // Check if Google SDK loaded
+  if (typeof google === 'undefined') {
+    // Fallback: show setup instructions if not configured yet
+    showGoogleNotice();
+    return;
+  }
+  google.accounts.id.initialize({
+    client_id: GOOGLE_CLIENT_ID,
+    callback: handleGoogleResponse,
+    auto_select: false,
+    cancel_on_tap_outside: true,
+  });
+  google.accounts.id.prompt(function(notification) {
+    if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
+      // One Tap blocked — open full popup flow
+      google.accounts.oauth2.initTokenClient({
+        client_id: GOOGLE_CLIENT_ID,
+        scope: 'email profile',
+        callback: handleGoogleToken,
+      }).requestAccessToken();
+    }
+  });
+}
+
+function handleGoogleResponse(response) {
+  // Decode JWT credential to get user info
+  var payload = JSON.parse(atob(response.credential.split('.')[1]));
+  finishGoogleLogin(payload.name, payload.email, payload.picture);
+}
+
+function handleGoogleToken(tokenResponse) {
+  if (tokenResponse && tokenResponse.access_token) {
+    // Fetch user info from Google
+    fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+      headers: { Authorization: 'Bearer ' + tokenResponse.access_token }
+    })
+    .then(r => r.json())
+    .then(u => finishGoogleLogin(u.name, u.email, u.picture));
+  }
+}
+
+function finishGoogleLogin(name, email, picture) {
+  localStorage.setItem('hhLoggedIn', 'true');
+  localStorage.setItem('hhUserName', name);
+  localStorage.setItem('hhUserEmail', email);
+  localStorage.setItem('hhUserPicture', picture || '');
+  localStorage.setItem('hhLoginMethod', 'google');
+
+  var urlParams = new URLSearchParams(window.location.search);
+  var next = urlParams.get('next');
+  if (next === 'signup') {
+    window.location.href = 'signup.html';
+  } else {
+    window.location.href = 'home.html';
+  }
+}
+
+function showGoogleNotice() {
+  // Show a helpful modal if Google OAuth not yet configured
+  var overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(5,5,8,0.92);z-index:9999;display:flex;align-items:center;justify-content:center;padding:24px;';
+  overlay.innerHTML = `
+    <div style="background:#0d0d1a;border:1px solid rgba(212,168,67,0.2);border-radius:20px;padding:40px;max-width:440px;text-align:center;">
+      <div style="font-size:2.5rem;margin-bottom:16px;">🔧</div>
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:1.6rem;letter-spacing:.04em;margin-bottom:12px;color:#d4a843;">Google Sign-In Setup Needed</div>
+      <p style="font-size:.85rem;color:rgba(240,237,232,0.5);line-height:1.8;margin-bottom:24px;">To enable Google login, add your OAuth Client ID from <strong style="color:rgba(240,237,232,0.8);">Google Cloud Console</strong> to the login.html file. Replace <code style="color:#d4a843;font-size:.78rem;">YOUR_GOOGLE_CLIENT_ID_HERE</code> with your actual Client ID.</p>
+      <div style="background:rgba(212,168,67,0.06);border:1px solid rgba(212,168,67,0.12);border-radius:10px;padding:16px;margin-bottom:24px;font-size:.78rem;color:rgba(240,237,232,0.5);text-align:left;line-height:2;">
+        1. Go to <strong style="color:#d4a843;">console.cloud.google.com</strong><br/>
+        2. Create OAuth 2.0 Client ID<br/>
+        3. Add your GitHub Pages domain to Authorized Origins<br/>
+        4. Replace the placeholder in login.html
+      </div>
+      <button onclick="this.closest('div[style*=fixed]').remove()" style="background:linear-gradient(135deg,#d4a843,#f0c060);color:#000;font-family:'Rajdhani',sans-serif;font-weight:700;font-size:.88rem;padding:12px 32px;border-radius:8px;border:none;cursor:pointer;letter-spacing:.08em;text-transform:uppercase;">Got It</button>
+    </div>`;
+  document.body.appendChild(overlay);
+}
+
+// Read ?next= param from URL
+var urlParams = new URLSearchParams(window.location.search);
+var nextPage = urlParams.get('next'); // e.g. "signup"
+
+// If redirected here for signup, show banner and update CTA
+if (nextPage === 'signup') {
+  document.getElementById('nextBanner').style.display = 'block';
+  document.getElementById('loginTitle').textContent = 'First, Log In or Sign Up';
+  document.getElementById('loginSub').textContent = 'Create your account or log in — then complete your startup or investor registration.';
+  // Make "Create Account" link go directly to signup
+  document.getElementById('signupLink').href = 'signup.html';
+}
+
+function switchTab(el) {
+  el.parentElement.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+}
+
+function doLogin() {
+  var email = document.getElementById('l_email').value.trim();
+  var pass = document.getElementById('l_pass').value;
+  if (!email || !email.includes('@')) { alert('Please enter a valid email address.'); return; }
+  if (!pass || pass.length < 6) { alert('Please enter your password.'); return; }
+
+  // Set login flag
+  localStorage.setItem('hhLoggedIn', 'true');
+
+  // Redirect based on ?next= param
+  if (nextPage === 'signup') {
+    window.location.href = 'signup.html';
+  } else {
+    // Default — go home with a welcome back
+    window.location.href = 'home.html';
+  }
+}
+</script>
 <footer>
   <div class="footer-inner">
     <div class="footer-brand">
@@ -227,7 +572,7 @@ footer{background:var(--deep);border-top:1px solid var(--border);padding:72px 64
     </div>
   </div>
   <div class="footer-bottom">
-    <span class="footer-bottom-text">© 2026 The Hook Hustlers. All Rights Reserved. | Varanasi, Uttar Pradesh, India 🇮🇳</span>
+    <span class="footer-bottom-text">© 2026 The Hook Hustlers. All Rights Reserved. | Lucknow, Uttar Pradesh, India 🇮🇳</span>
     <div class="footer-legal">
       <a href="help.html">Help Centre</a>
       <a href="privacy.html">Privacy Policy</a>
@@ -297,6 +642,65 @@ function closeMobile(){
   const h=document.getElementById('hamburger'),m=document.getElementById('mobileMenu');
   if(h&&m){h.classList.remove('open');m.classList.remove('open');document.body.style.overflow='';}
 }
+</script>
+
+<script>
+
+// Hide Login button if already logged in
+(function(){
+  if(localStorage.getItem('hhLoggedIn') === 'true'){
+    var loginBtns = document.querySelectorAll('a[href="login.html"], a[href="login.html?next=signup"]');
+    loginBtns.forEach(function(btn){
+      if(btn.classList.contains('nav-btn-outline') || btn.textContent.trim() === 'Login'){
+        btn.style.display = 'none';
+      }
+    });
+    // Show logged-in indicator in nav
+    var navRight = document.querySelector('.nav-right');
+    if(navRight && !document.getElementById('nav-user-badge')){
+      var name = localStorage.getItem('hhUserName') || 'Account';
+      var first = name.split(' ')[0];
+      var badge = document.createElement('div');
+      badge.id = 'nav-user-badge';
+      badge.style.cssText = 'display:flex;align-items:center;gap:8px;font-family:"Rajdhani",sans-serif;font-size:.82rem;font-weight:600;letter-spacing:.06em;color:var(--gold);cursor:pointer;';
+      badge.innerHTML = '<div style="width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,var(--gold),var(--gold2));color:var(--black);display:flex;align-items:center;justify-content:center;font-size:.75rem;font-weight:700;">' + first.charAt(0).toUpperCase() + '</div>' + first;
+      badge.title = 'Logged in as ' + name;
+      badge.onclick = function(){
+        if(confirm('Log out of The Hook Hustlers?')){
+          localStorage.removeItem('hhLoggedIn');
+          localStorage.removeItem('hhUserName');
+          localStorage.removeItem('hhUserEmail');
+          localStorage.removeItem('hhUserPicture');
+          window.location.href = 'home.html';
+        }
+      };
+      navRight.insertBefore(badge, navRight.firstChild);
+    }
+  }
+})();
+// Show pricing in nav only if user is logged in
+(function(){
+  if(localStorage.getItem('hhLoggedIn') === 'true') {
+    var links = document.querySelector('.nav-links');
+    var mobile = document.getElementById('mobileMenu');
+    if(links) {
+      var a = document.createElement('a');
+      a.href = 'pricing.html';
+      a.textContent = 'Pricing';
+      // Insert before last child
+      var ref = links.querySelector('a[href="contact.html"]');
+      if(ref) links.insertBefore(a, ref);
+    }
+    if(mobile) {
+      var ma = document.createElement('a');
+      ma.href = 'pricing.html';
+      ma.textContent = 'Pricing';
+      ma.onclick = function(){closeMobile();};
+      var mref = mobile.querySelector('a[href="contact.html"]');
+      if(mref) mobile.insertBefore(ma, mref);
+    }
+  }
+})();
 </script>
 </body>
 </html>
