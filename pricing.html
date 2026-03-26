@@ -1,9 +1,78 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+
+  <!-- 7. Font Preloads -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <!-- 8. Mobile browser chrome color -->
+  <meta name="theme-color" content="#04040b">
+
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase-client.js"></script>
 <script>
-// Instant login-state class on <html> before render
-if(localStorage.getItem('hhLoggedIn')==='true'){document.documentElement.classList.add('is-logged-in');}
+// Instant login-state class on <html lang="en"> before render
+if(localStorage.getItem('hhLoggedIn')==='true'){
+  document.documentElement.classList.add('is-logged-in');
+} else {
+  // If no localStorage, we'll verify with Supabase as a backup/force-redirect
+  async function checkPricingAccess() {
+    if(typeof window.supabaseClient === 'undefined') return;
+    const { data: { session } } = await window.supabaseClient.auth.getSession();
+    if(!session) {
+      window.location.href = 'login.html?next=pricing.html';
+    }
+  }
+  checkPricingAccess();
+}
+
+// Razorpay Integration Logic
+window.processPayment = async function(planName, amountPaise) {
+  try {
+    const { data: { user } } = await window.supabaseClient.auth.getUser();
+    if (!user) {
+      window.location.href = 'login.html';
+      return;
+    }
+
+    const options = {
+      "key": "rzp_test_SVXWzCa0NaX3Wp", // Your actual Test Key ID
+      "amount": amountPaise,
+      "currency": "INR",
+      "name": "The Hook Hustlers",
+      "description": `${planName} Membership Plan`,
+      "image": "https://thehookhustlers.com/logo.png",
+      "handler": async function (response) {
+        console.log('✅ Payment Success:', response.razorpay_payment_id);
+        
+        // Update user tier in directory
+        const { error: upErr } = await window.supabaseClient
+          .from('users_directory')
+          .update({ tier: planName })
+          .eq('id', user.id);
+          
+        if (upErr) {
+          alert("Payment verified, but failed to update tier locally. Please contact support@thehookhustlers.com with Payment ID: " + response.razorpay_payment_id);
+        } else {
+          alert(`Welcome to ${planName}! Your account has been upgraded successfully.\n\nTransaction ID: ${response.razorpay_payment_id}`);
+          window.location.href = 'dashboard.html';
+        }
+      },
+      "prefill": {
+        "name": user.user_metadata?.full_name || "",
+        "email": user.email || ""
+      },
+      "theme": { "color": "#7c3aed" }
+    };
+
+    const rzp = new Razorpay(options);
+    rzp.open();
+  } catch (err) {
+    console.error('Payment Error:', err);
+    alert("Checkout failed to initialize. Please try again or contact support.");
+  }
+}
 </script>
 <style>
 /* Hide Login button instantly when logged in — no flash */
@@ -17,326 +86,12 @@ html.is-logged-in a.nav-btn-outline { display:none !important; }
   .hamburger{flex-shrink:0;}
 }
 </style>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Pricing — The Hook Hustlers</title>
-<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400&family=Rajdhani:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
-<style>/* SHARED STYLES FOR ALL PAGES */
-:root {
- --black: #050508;
- --deep: #080810;
- --card: #0d0d1a;
- --card2: #0a0a15;
- --gold: #d4a843;
- --gold2: #f0c060;
- --gold-dim: rgba(212,168,67,0.1);
- --gold-glow: rgba(212,168,67,0.25);
- --navy: #0a1628;
- --blue: #1a6cff;
- --blue-dim: rgba(26,108,255,0.1);
- --emerald: #00d084;
- --emerald-dim: rgba(0,208,132,0.1);
- --crimson: #e63946;
- --crimson-dim: rgba(230,57,70,0.1);
- --white: #f0ede8;
- --muted: rgba(240,237,232,0.4);
- --border: rgba(212,168,67,0.08);
- --border2: rgba(255,255,255,0.05);
-}
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
-html{scroll-behavior:smooth;}
-body{background:var(--black);color:var(--white);font-family:'Rajdhani',sans-serif;font-weight:400;line-height:1.6;overflow-x:hidden;cursor:none;word-break:break-word;}
-.cursor{position:fixed;width:10px;height:10px;background:var(--gold);border-radius:50%;pointer-events:none;z-index:9999;transform:translate(-50%,-50%);transition:transform .1s;mix-blend-mode:difference;}
-.cursor-ring{position:fixed;width:36px;height:36px;border:1px solid var(--gold);border-radius:50%;pointer-events:none;z-index:9998;transform:translate(-50%,-50%);transition:width .15s ease,height .15s ease,opacity .15s ease;opacity:.6;}@media(max-width:768px){.cursor,.cursor-ring{display:none!important;}body{cursor:auto!important;}}
-#particles{position:fixed;inset:0;z-index:0;pointer-events:none;}
-nav{position:fixed;top:0;left:0;right:0;z-index:100;display:flex;align-items:center;justify-content:space-between;padding:18px 64px;background:rgba(5,5,8,0.85);backdrop-filter:blur(24px);border-bottom:1px solid var(--border);}
-.nav-logo{font-family:'Bebas Neue',sans-serif;font-size:1.6rem;letter-spacing:.08em;background:linear-gradient(135deg,var(--gold),var(--gold2),var(--blue));-webkit-background-clip:text;-webkit-text-fill-color:transparent;text-decoration:none;}
-.nav-links{display:flex;gap:32px;}
-.nav-links a{font-family:'Rajdhani',sans-serif;font-size:.82rem;color:var(--muted);transition:color .2s;letter-spacing:.12em;text-transform:uppercase;font-weight:500;text-decoration:none;}
-.nav-links a[href="home.html"]{color:rgba(240,237,232,0.65);font-weight:600;}
-.nav-links a[href="home.html"]:hover{color:var(--gold);}
-.nav-links a:hover,.nav-links a.active{color:var(--gold);}
-.nav-right{display:flex;gap:4px;align-items:center;}
-.nav-btn{font-family:'Rajdhani',sans-serif;font-weight:600;font-size:.82rem;padding:9px 22px;border-radius:6px;letter-spacing:.08em;text-transform:uppercase;text-decoration:none;transition:all .2s;}
-.nav-btn-outline{border:1px solid rgba(212,168,67,0.3);color:var(--gold);}
-.nav-btn-outline:hover{background:var(--gold-dim);}
-.nav-btn-gold{background:linear-gradient(135deg,var(--gold),var(--gold2));color:var(--black);}
-.nav-btn-gold:hover{transform:translateY(-1px);box-shadow:0 6px 24px var(--gold-glow);}
-.hamburger{display:none;flex-direction:column;gap:5px;cursor:pointer;background:none;border:none;padding:4px;}
-.hamburger span{display:block;width:24px;height:2px;background:var(--gold);border-radius:2px;transition:all .3s;}
-.hamburger.open span:nth-child(1){transform:translateY(7px) rotate(45deg);}
-.hamburger.open span:nth-child(2){opacity:0;}
-.hamburger.open span:nth-child(3){transform:translateY(-7px) rotate(-45deg);}
-.mobile-menu{display:none;position:fixed;inset:0;background:rgba(5,5,8,.98);backdrop-filter:blur(20px);z-index:20000;flex-direction:column;align-items:center;justify-content:center;padding-top:80px;padding-bottom:30px;gap:0;overflow-y:auto;opacity:0;pointer-events:none;transition:opacity .3s;}
-.mobile-menu.open{opacity:1;pointer-events:all;}
-.mobile-menu a{font-family:'Bebas Neue',sans-serif;font-size:1.9rem;letter-spacing:.1em;color:var(--white);text-decoration:none;transition:color .2s;padding:10px 0;display:block;width:100%;text-align:center;}
-.mobile-menu a:hover{color:var(--gold);}
-.ticker-wrap{background:linear-gradient(90deg,var(--navy),#0d1f3c,var(--navy));border-bottom:1px solid rgba(26,108,255,0.2);padding:9px 0;overflow:hidden;position:fixed;top:61px;left:0;right:0;z-index:10000;}
-.ticker{display:flex;gap:60px;animation:ticker 30s linear infinite;white-space:nowrap;}
-.ticker-item{font-family:'Rajdhani',sans-serif;font-size:.78rem;letter-spacing:.1em;color:rgba(240,237,232,0.6);display:flex;align-items:center;gap:8px;flex-shrink:0;}
-.ticker-item span{color:var(--emerald);font-weight:600;}
-.ticker-item .dot{width:5px;height:5px;border-radius:50%;background:var(--gold);flex-shrink:0;}
-section{padding:120px 64px;position:relative;z-index:1;}
-.page-hero{padding:160px 64px 80px;position:relative;z-index:1;overflow:hidden;}
-.page-hero-mesh{position:absolute;inset:0;z-index:0;background:radial-gradient(ellipse 80% 60% at 50% 0%,rgba(212,168,67,0.07) 0%,transparent 70%),radial-gradient(ellipse 50% 40% at 10% 80%,rgba(26,108,255,0.05) 0%,transparent 60%);}
-.page-hero-lines{position:absolute;inset:0;z-index:0;background-image:linear-gradient(rgba(212,168,67,0.025) 1px,transparent 1px),linear-gradient(90deg,rgba(212,168,67,0.025) 1px,transparent 1px);background-size:80px 80px;mask-image:radial-gradient(ellipse 90% 90% at 50% 50%,black 0%,transparent 100%);}
-.page-hero-content{position:relative;z-index:1;max-width:800px;}
-.sec-label{display:inline-block;font-size:.72rem;letter-spacing:.18em;text-transform:uppercase;color:var(--gold);font-weight:600;margin-bottom:14px;font-family:'Rajdhani',sans-serif;}
-.sec-title{font-family:'Bebas Neue',sans-serif;font-size:clamp(2.4rem,5vw,4.5rem);letter-spacing:.04em;line-height:1;}
-.sec-sub{margin-top:16px;color:var(--muted);max-width:600px;font-size:1rem;line-height:1.8;}
-.sec-inner{max-width:1200px;margin:0 auto;}
-.btn-primary{background:linear-gradient(135deg,var(--gold),var(--gold2));color:var(--black);font-family:'Rajdhani',sans-serif;font-weight:700;font-size:.9rem;padding:15px 36px;border-radius:8px;letter-spacing:.08em;text-transform:uppercase;text-decoration:none;transition:all .25s;display:inline-block;}
-.btn-primary:hover{transform:translateY(-2px);box-shadow:0 12px 40px var(--gold-glow);}
-.btn-secondary{background:transparent;color:var(--white);font-family:'Rajdhani',sans-serif;font-weight:600;font-size:.9rem;padding:15px 36px;border-radius:8px;border:1px solid rgba(255,255,255,0.12);letter-spacing:.08em;text-transform:uppercase;text-decoration:none;transition:all .25s;display:inline-block;}
-.btn-secondary:hover{border-color:rgba(26,108,255,0.4);background:var(--blue-dim);}
-.reveal{opacity:0;transform:translateY(28px);transition:opacity .8s ease,transform .8s ease;}
-.reveal.visible{opacity:1;transform:translateY(0);}
-footer{background:var(--deep);border-top:1px solid var(--border);padding:72px 64px 0;position:relative;z-index:1;}
-.footer-inner{max-width:1200px;margin:0 auto;display:grid;grid-template-columns:2.2fr 1fr 1fr 1fr;gap:60px;padding-bottom:60px;}
-.footer-brand p{font-size:.85rem;color:var(--muted);line-height:1.85;max-width:280px;margin-bottom:24px;margin-top:16px;}
-.footer-contact a{display:flex;align-items:center;gap:8px;font-size:.82rem;color:var(--muted);text-decoration:none;margin-bottom:10px;transition:color .2s;}
-.footer-contact a:hover{color:var(--gold);}
-.footer-col h5{font-family:'Rajdhani',sans-serif;font-size:.78rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--gold);margin-bottom:20px;}
-.footer-col a{display:block;font-size:.82rem;color:var(--muted);text-decoration:none;margin-bottom:12px;transition:color .2s;}
-.footer-col a:hover{color:var(--white);}
-.footer-socials{display:flex;gap:10px;margin-top:8px;}
-.social-icon{width:36px;height:36px;border-radius:8px;background:var(--card);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:.9rem;transition:all .2s;text-decoration:none;}
-.social-icon:hover{background:var(--gold-dim);border-color:rgba(212,168,67,0.3);}
-.footer-bottom{max-width:1200px;margin:0 auto;padding:24px 0;border-top:1px solid var(--border2);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;}
-.footer-bottom-text{font-size:.75rem;color:rgba(240,237,232,0.25);letter-spacing:.06em;}
-.footer-legal{display:flex;gap:24px;}
-.footer-legal a{font-size:.72rem;color:rgba(240,237,232,0.25);text-decoration:none;letter-spacing:.06em;transition:color .2s;}
-.footer-legal a:hover{color:var(--gold);}
-.badge{font-size:.68rem;padding:3px 9px;border-radius:4px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;font-family:'Rajdhani',sans-serif;}
-.badge-gold{background:var(--gold-dim);color:var(--gold);border:1px solid rgba(212,168,67,0.2);}
-.badge-blue{background:var(--blue-dim);color:#6aa3ff;border:1px solid rgba(26,108,255,0.2);}
-.badge-green{background:var(--emerald-dim);color:var(--emerald);border:1px solid rgba(0,208,132,0.2);}
-.badge-red{background:var(--crimson-dim);color:#ff8080;border:1px solid rgba(230,57,70,0.2);}
-@keyframes ticker{0%{transform:translateX(0);}100%{transform:translateX(-50%);}}
-@keyframes fadeUp{from{opacity:0;transform:translateY(24px);}to{opacity:1;transform:translateY(0);}}
-@keyframes pulse{0%,100%{opacity:1;transform:scale(1);}50%{opacity:.4;transform:scale(.7);}}
-@media(max-width:1024px){nav{padding:16px 32px;}section{padding:90px 32px;}.page-hero{padding:140px 32px 60px;}.footer-inner{grid-template-columns:1fr 1fr;gap:40px;}}
-@media(max-width:768px){nav{padding:10px 16px;} .nav-logo{gap:6px;} .nav-logo img{height:28px;width:28px;} .nav-logo-text{font-size:1rem;letter-spacing:.04em;white-space:nowrap;} .nav-links{display:none;} .nav-right .nav-btn,.nav-right a.nav-btn-outline{display:none !important;} .hamburger{display:flex;} .mobile-menu{display:flex;} section{padding:72px 20px;} .page-hero{padding:110px 20px 48px !important;} .footer-inner{grid-template-columns:1fr;gap:32px;} .footer-bottom{flex-direction:column;text-align:center;} .footer-legal{flex-wrap:wrap;justify-content:center;gap:16px;} .ticker-wrap{top:48px;}}
-
-.pricing-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;max-width:1100px;margin:0 auto;}
-.price-card{background:var(--card);border:1px solid var(--border);border-radius:20px;padding:44px 36px;transition:all .3s;position:relative;}
-.price-card:hover{transform:translateY(-4px);}
-.price-card.featured{border-color:rgba(212,168,67,.3);background:linear-gradient(145deg,#0f0f22,#0d0d1a);box-shadow:0 0 60px rgba(212,168,67,.07);}
-.featured-tag{position:absolute;top:-14px;left:50%;transform:translateX(-50%);background:linear-gradient(135deg,var(--gold),var(--gold2));color:var(--black);font-family:"Rajdhani",sans-serif;font-size:.72rem;font-weight:700;padding:5px 18px;border-radius:100px;letter-spacing:.1em;text-transform:uppercase;}
-.price-name{font-family:"Rajdhani",sans-serif;font-size:.75rem;font-weight:700;color:var(--muted);letter-spacing:.14em;text-transform:uppercase;margin-bottom:18px;}
-.price-amount{font-family:"Bebas Neue",sans-serif;font-size:3rem;letter-spacing:.02em;background:linear-gradient(135deg,var(--gold),var(--gold2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:4px;line-height:1;}
-.price-amount span{font-family:"Rajdhani",sans-serif;font-size:.9rem;color:var(--muted);font-weight:400;}
-.price-period{font-size:.78rem;color:var(--muted);margin-bottom:28px;}
-.price-features{list-style:none;margin-bottom:28px;}
-.price-features li{font-size:.85rem;color:rgba(240,237,232,.65);padding:9px 0;border-bottom:1px solid var(--border2);display:flex;align-items:center;gap:8px;}
-.price-features li::before{content:"✓";color:var(--emerald);font-weight:700;font-size:.8rem;flex-shrink:0;}
-.price-features li.no::before{content:"—";color:var(--muted);}
-.price-features li.no{opacity:.4;}
-.price-btn{display:block;width:100%;text-align:center;padding:13px;border-radius:10px;font-family:"Rajdhani",sans-serif;font-weight:700;font-size:.88rem;letter-spacing:.08em;text-transform:uppercase;text-decoration:none;transition:all .2s;}
-.price-btn-gold{background:linear-gradient(135deg,var(--gold),var(--gold2));color:var(--black);}
-.price-btn-gold:hover{transform:translateY(-1px);box-shadow:0 8px 28px var(--gold-glow);}
-.price-btn-outline{border:1px solid var(--border);color:var(--muted);}
-.price-btn-outline:hover{border-color:rgba(212,168,67,.3);color:var(--gold);background:var(--gold-dim);}
-.commission-table{background:var(--card);border:1px solid var(--border);border-radius:20px;overflow:hidden;max-width:900px;margin:60px auto 0;}
-.commission-table table{width:100%;border-collapse:collapse;}
-.commission-table th{background:linear-gradient(135deg,rgba(212,168,67,.1),rgba(26,108,255,.06));font-family:"Rajdhani",sans-serif;font-size:.75rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--gold);padding:18px 24px;text-align:left;border-bottom:1px solid var(--border);}
-.commission-table td{padding:16px 24px;font-size:.88rem;color:var(--muted);border-bottom:1px solid var(--border2);}
-.commission-table tr:last-child td{border-bottom:none;}
-.commission-table tr:hover td{background:rgba(212,168,67,.03);color:var(--white);}
-.commission-table .earn{font-family:"Bebas Neue",sans-serif;font-size:1rem;color:var(--emerald);}
-.commission-table .pct{font-weight:700;color:var(--gold);}
-.faq-list{max-width:800px;margin:60px auto 0;}
-.faq-item{border-bottom:1px solid var(--border2);padding:24px 0;}
-.faq-q{font-family:"Rajdhani",sans-serif;font-size:1rem;font-weight:700;letter-spacing:.04em;cursor:pointer;display:flex;justify-content:space-between;align-items:center;color:var(--white);}
-.faq-q::after{content:"+";color:var(--gold);font-size:1.3rem;transition:transform .3s;}
-.faq-item.open .faq-q::after{transform:rotate(45deg);}
-.faq-a{font-size:.88rem;color:var(--muted);line-height:1.8;max-height:0;overflow:hidden;transition:max-height .3s ease,padding .3s;}
-.faq-item.open .faq-a{max-height:200px;padding-top:12px;}
-@media(max-width:1024px){.pricing-grid{grid-template-columns:1fr;max-width:480px;}}
-@media(max-width:768px){.commission-table{overflow-x:auto;}.commission-table table{min-width:500px;}}
-</style>
-
-<style id="global-mobile-fix">
-/* ══════════════════════════════════════
-  GLOBAL MOBILE FIX — all pages
-  Target: screens ≤768px
-══════════════════════════════════════ */
-@media(max-width:768px){
-
- /* ── SPACING ── */
- section, .filter-section, .founder-section-about,
- .about-mission, .inv-type-section {
-  padding: 60px 18px !important;
- }
- 
- .sec-inner { padding: 0 !important; }
-
- /* ── TYPOGRAPHY ── */
- .sec-title { font-size: clamp(1.8rem, 8vw, 3rem) !important; }
- .sec-sub { font-size: .88rem !important; }
- h1 { font-size: clamp(2rem, 10vw, 4rem) !important; }
- h2 { font-size: clamp(1.6rem, 7vw, 3rem) !important; }
-
- /* ── ALL INLINE GRIDS → single column ── */
- [style*="grid-template-columns:1fr 1fr"],
- [style*="grid-template-columns: 1fr 1fr"],
- [style*="grid-template-columns:1fr 1.6fr"],
- [style*="grid-template-columns:1fr 2fr"],
- [style*="grid-template-columns:2fr 1fr"],
- [style*="grid-template-columns:1fr 1.5fr"],
- [style*="grid-template-columns:repeat(2"],
- [style*="grid-template-columns:repeat(3"],
- [style*="grid-template-columns:repeat(4"],
- [style*="grid-template-columns:repeat(5"],
- [style*="grid-template-columns:3fr 1fr"],
- [style*="grid-template-columns:140px 1fr"],
- [style*="grid-template-columns:1fr 40px 1fr"] {
-  grid-template-columns: 1fr !important;
-  gap: 24px !important;
- }
-
- /* ── NAMED GRID CLASSES → single column ── */
- .why-grid, .checklist-grid, .landscape-split,
- .inv-stat-grid, .how-grid, .sectors-grid,
- .startups-grid, .inv-grid, .mission-grid,
- .founder-about-inner, .value-grid,
- .roadmap-item, .footer-inner { 
-  grid-template-columns: 1fr !important; 
-  gap: 20px !important;
- }
-
- /* ── TIMELINE middle column hide ── */
- [style*="grid-template-columns:1fr 40px 1fr"] > div:nth-child(2) {
-  display: none !important;
- }
- [style*="grid-template-columns:1fr 40px 1fr"] > div:nth-child(1),
- [style*="grid-template-columns:1fr 40px 1fr"] > div:nth-child(3) {
-  text-align: left !important;
-  padding-left: 0 !important;
-  padding-right: 0 !important;
-  padding-top: 0 !important;
- }
-
- /* ── VERIFICATION STEPS → 2 col on mobile ── */
- [style*="grid-template-columns:repeat(5,1fr)"] {
-  grid-template-columns: repeat(2, 1fr) !important;
-  gap: 20px !important;
- }
-
- /* ── COMPARISON TABLE → scrollable ── */
- table { font-size: .75rem !important; }
- table td, table th { padding: 10px 10px !important; }
- th div { font-size: .7rem !important; padding: 8px !important; }
-
- /* ── HERO ACTIONS → stack ── */
- .hero-actions, [style*="display:flex"][style*="gap:20px"],
- [style*="display:flex"][style*="gap:12px"] {
-  flex-wrap: wrap !important;
- }
- .hero-actions a { text-align: center; width: 100%; }
-
- /* ── STAT CARDS → 2 col ── */
- .inv-stat-grid {
-  grid-template-columns: repeat(2, 1fr) !important;
- }
-
- /* ── CTA SECTION ── */
- .cta-section { padding: 72px 18px !important; }
-
- /* ── WAITLIST INPUTS → stack ── */
- .waitlist-input-wrap, 
- [style*="display:flex"][style*="flex-wrap:wrap"] {
-  flex-direction: column !important;
- }
- .waitlist-input, .search-input { min-width: unset !important; width: 100% !important; }
-
- /* ── FOOTER ── */
- footer { padding: 48px 18px 0 !important; }
- .footer-inner { grid-template-columns: 1fr !important; gap: 28px !important; }
- .footer-bottom { flex-direction: column !important; text-align: center !important; }
- .footer-legal { flex-wrap: wrap !important; justify-content: center !important; gap: 12px !important; }
-
- /* ── FILTER CHIPS ── */
- .filter-chip { font-size: .7rem !important; padding: 6px 14px !important; }
-
- /* ── SECTOR CARDS → 1 col ── */
- .sectors-grid, [style*="grid-template-columns:repeat(3,1fr)"],
- [style*="grid-template-columns:repeat(auto-fill,minmax(260px"],
- [style*="grid-template-columns:repeat(auto-fill,minmax(280px"],
- [style*="grid-template-columns:repeat(auto-fill,minmax(220px"],
- [style*="grid-template-columns:repeat(auto-fill,minmax(200px"] {
-  grid-template-columns: 1fr !important;
- }
-
- /* ── JOURNEY SIDE-BY-SIDE → stack ── */
- .how-grid { grid-template-columns: 1fr !important; }
- .how-divider { display: none !important; }
- .journey-col { padding: 0 !important; }
-
- /* ── STAT NUMBERS FONT SIZE ── */
- .stat-number, .inv-stat-num, .spots-counter { 
-  font-size: clamp(2rem, 8vw, 3rem) !important; 
- }
-
- /* ── FOUNDER PHOTO ── */
- .founder-photo, .founder-photo-wrap { 
-  max-width: 280px !important; 
-  margin: 0 auto !important; 
- }
-
- /* ── CHECKLIST GRID ── */
- .checklist-grid { grid-template-columns: 1fr !important; }
-
- /* ── FUNDING READINESS CARD ── */
- .checker-q-head { padding: 14px 16px !important; }
- .checker-options { padding: 0 16px 14px !important; }
- .checker-opt { font-size: .8rem !important; }
-
- /* ── ABOUT TIMELINE ── */
- .roadmap-item { grid-template-columns: 1fr !important; }
- .rm-date { text-align: left !important; }
- .roadmap-item::before { display: none !important; }
-
- /* ── INLINE PADDING OVERRIDES ── */
- [style*="padding:80px 64px"],
- [style*="padding:100px 64px"],
- [style*="padding:120px 64px"] {
-  padding: 56px 18px !important;
- }
- [style*="padding:48px"] { padding: 28px 18px !important; }
- [style*="padding:64px"] { padding: 28px 18px !important; }
-
- /* ── HIDE ABSOLUTE DECORATIVE ELEMENTS ON MOBILE ── */
- .page-hero-lines { display: none !important; }
-
- /* ── HOW IT WORKS 5-STEP PROCESS ── */
- [style*="repeat(5,1fr)"] {
-  grid-template-columns: 1fr 1fr !important;
-  gap: 20px !important;
- }
-
- /* ── WAITLIST CARD ── */
- .waitlist-card { padding: 32px 20px !important; }
- .spots-counter { font-size: 3.5rem !important; }
-}
-
-@media(max-width:480px){
- .inv-stat-grid { grid-template-columns: 1fr 1fr !important; }
- .sec-title { font-size: clamp(1.6rem, 9vw, 2.4rem) !important; }
- 
- section { padding: 48px 14px !important; }
- [style*="padding:80px 64px"],
- [style*="padding:100px 64px"],
- [style*="padding:120px 64px"] { padding: 48px 14px !important; }
- .filter-section { padding: 120px 14px 24px !important; }
-}
-</style>
-
+<link rel="stylesheet" href="hh-global.css">
 </head>
 <body>
 <div class="cursor" id="cursor"></div>
 <div class="cursor-ring" id="cursorRing"></div>
-<canvas id="particles"></canvas>
+
 <div class="mobile-menu" id="mobileMenu">
  <a href="home.html" onclick="closeMobile()">Home</a>
  <a href="startups.html" onclick="closeMobile()">Startups</a>
@@ -344,11 +99,11 @@ footer{background:var(--deep);border-top:1px solid var(--border);padding:72px 64
  <a href="about.html" onclick="closeMobile()">About</a>
  <a href="pricing.html" class="active" onclick="closeMobile()">Pricing</a>
  <a href="contact.html" onclick="closeMobile()">Contact</a>
- <a href="login.html?next=signup" onclick="closeMobile()" style="color:var(--gold)">Join Now →</a>
+ <a href="login.html?next=signup" onclick="closeMobile()" style="color:var(--vivid2)">Join Now →</a>
 </div>
 <nav>
  <a href="home.html" class="nav-logo" style="display:flex;align-items:center;gap:10px;text-decoration:none;">
-  <img src="logo.png" alt="The Hook Hustlers Logo" style="height:38px;width:38px;border-radius:50%;object-fit:cover;box-shadow:0 0 10px rgba(212,168,67,0.5),0 0 20px rgba(212,168,67,0.2);flex-shrink:0;" onerror="this.style.display='none'"/>
+  <img loading="lazy" src="logo.png" alt="The Hook Hustlers Logo" style="height:38px;width:38px;border-radius:50%;object-fit:cover;box-shadow:0 0 14px rgba(124,58,237,0.7),0 0 32px rgba(124,58,237,0.4),0 0 60px rgba(6,182,212,0.2);flex-shrink:0;transition:box-shadow 0.3s ease;" onerror="this.style.display='none'"/>
   <span class="nav-logo-text">THE HOOK HUSTLERS</span>
  </a>
  <div class="nav-links">
@@ -361,10 +116,64 @@ footer{background:var(--deep);border-top:1px solid var(--border);padding:72px 64
  </div>
  <div class="nav-right">
   <a href="login.html" class="nav-btn nav-btn-outline">Login</a>
-  <a href="login.html?next=signup" onclick="if(localStorage.getItem('hhLoggedIn')==='true'){event.preventDefault();window.location.href='signup.html';}" class="nav-btn nav-btn-gold">Join Now</a>
+  <a href="login.html?next=signup" class="nav-btn nav-btn-gold">Join Now</a>
  </div>
  <button class="hamburger" id="hamburger"><span></span><span></span><span></span></button>
 </nav>
+
+<script>
+  document.addEventListener('DOMContentLoaded', async () => {
+    if(typeof window.supabaseClient === 'undefined') return;
+    
+    // Initial check
+    const { data: { session } } = await window.supabaseClient.auth.getSession();
+    updateAuthUI(session);
+
+    // Listen for changes
+    window.supabaseClient.auth.onAuthStateChange((_event, session) => {
+      updateAuthUI(session);
+    });
+
+    function updateAuthUI(session) {
+      const navRight = document.querySelector('.nav-right');
+      const mobileMenu = document.querySelector('.mobile-menu');
+
+      if(session) {
+        localStorage.setItem('hhLoggedIn', 'true');
+        if(navRight) {
+          navRight.innerHTML = `
+            <a href="dashboard.html" class="nav-btn nav-btn-outline" style="border-color:var(--cyan);color:var(--cyan);margin-right:12px;">Dashboard</a>
+            <button onclick="window.supabaseClient.auth.signOut().then(()=>{localStorage.removeItem('hhLoggedIn');window.location.href='home.html'})" class="nav-btn nav-btn-solid" style="background:rgba(244,63,94,0.1);color:var(--crimson);border:1px solid rgba(244,63,94,0.4);">Sign Out</button>
+          `;
+        }
+        if(mobileMenu) {
+          if(!mobileMenu.innerHTML.includes('dashboard.html')) {
+            const mDash = document.createElement('a');
+            mDash.href = 'dashboard.html';
+            mDash.textContent = 'Dashboard';
+            mDash.style.color = 'var(--cyan)';
+            mobileMenu.insertBefore(mDash, mobileMenu.firstChild);
+          }
+          const joinBtn = Array.from(mobileMenu.querySelectorAll('a')).find(a => a.href.includes('login.html') || a.textContent.toLowerCase().includes('join'));
+          if(joinBtn) {
+            joinBtn.innerHTML = 'SIGN OUT';
+            joinBtn.style.color = 'var(--crimson)';
+            joinBtn.href = '#';
+            joinBtn.onclick = (e) => {
+              e.preventDefault();
+              window.supabaseClient.auth.signOut().then(() => {
+                localStorage.removeItem('hhLoggedIn');
+                window.location.href = 'home.html';
+              });
+            };
+          }
+        }
+      } else {
+        localStorage.removeItem('hhLoggedIn');
+      }
+    }
+  });
+</script>
 <div class="ticker-wrap">
  <div class="ticker">
   <div class="ticker-item"><div class="dot"></div>🇮🇳 India has <span>6,53,000+ DPIIT-registered startups</span> — and most investors haven't heard of 99% of them</div>
@@ -419,7 +228,7 @@ footer{background:var(--deep);border-top:1px solid var(--border);padding:72px 64
      <li>Legal Document Templates</li>
      <li>Startup Valuation Tool</li>
     </ul>
-    <a href="login.html?next=signup" onclick="if(localStorage.getItem('hhLoggedIn')==='true'){event.preventDefault();window.location.href='signup.html';}" class="price-btn price-btn-outline">List My Startup</a>
+    <a href="javascript:void(0)" onclick="window.processPayment('Startup', 49900)" class="price-btn price-btn-outline">List My Startup</a>
    </div>
    <div class="price-card featured reveal">
     <div class="featured-tag">Best for Investors</div>
@@ -437,7 +246,7 @@ footer{background:var(--deep);border-top:1px solid var(--border);padding:72px 64
      <li>Priority Customer Support</li>
      <li>Toggle Investment Preferences</li>
     </ul>
-    <a href="login.html?next=signup" onclick="if(localStorage.getItem('hhLoggedIn')==='true'){event.preventDefault();window.location.href='signup.html';}" class="price-btn price-btn-gold">Join as Investor</a>
+    <a href="javascript:void(0)" onclick="window.processPayment('Investor', 459900)" class="price-btn price-btn-gold">Join as Investor</a>
    </div>
    <div class="price-card reveal">
     <div class="price-name">Post-Deal Plan</div>
@@ -453,7 +262,7 @@ footer{background:var(--deep);border-top:1px solid var(--border);padding:72px 64
      <li>Next round preparation tools</li>
      <li class="no">Not required before deal closes</li>
     </ul>
-    <a href="login.html?next=signup" onclick="if(localStorage.getItem('hhLoggedIn')==='true'){event.preventDefault();window.location.href='signup.html';}" class="price-btn price-btn-outline">Learn More</a>
+    <a href="javascript:void(0)" onclick="window.processPayment('Post-Deal', 159900)" class="price-btn price-btn-outline">Upgrade Now</a>
    </div>
   </div>
  </div>
@@ -508,7 +317,7 @@ footer{background:var(--deep);border-top:1px solid var(--border);padding:72px 64
  <div class="footer-inner">
   <div class="footer-brand">
    <a href="home.html" class="nav-logo" style="display:flex;align-items:center;gap:10px;text-decoration:none;">
-  <img src="logo.png" alt="The Hook Hustlers Logo" style="height:38px;width:38px;border-radius:50%;object-fit:cover;box-shadow:0 0 10px rgba(212,168,67,0.5),0 0 20px rgba(212,168,67,0.2);flex-shrink:0;" onerror="this.style.display='none'"/>
+  <img loading="lazy" src="logo.png" alt="The Hook Hustlers Logo" style="height:38px;width:38px;border-radius:50%;object-fit:cover;box-shadow:0 0 14px rgba(124,58,237,0.7),0 0 32px rgba(124,58,237,0.4),0 0 60px rgba(6,182,212,0.2);flex-shrink:0;transition:box-shadow 0.3s ease;" onerror="this.style.display='none'"/>
   <span class="nav-logo-text">THE HOOK HUSTLERS</span>
  </a>
    <p>India's #1 startup-investor matchmaking platform. Connecting DPIIT-verified startups with verified investors across every state, sector and stage.</p>
@@ -529,7 +338,7 @@ footer{background:var(--deep);border-top:1px solid var(--border);padding:72px 64
    <a href="startups.html">For Startups</a>
    <a href="investors.html">For Investors</a>
    <a href="pricing.html">Pricing</a>
-   <a href="login.html?next=signup" onclick="if(localStorage.getItem('hhLoggedIn')==='true'){event.preventDefault();window.location.href='signup.html';}">Join Now</a>
+   <a href="login.html?next=signup" onclick="if(localStorage.getItem('hhLoggedIn')==='true'){event.preventDefault();window.location.href='dashboard.html';}">Join Now</a>
    <a href="login.html">Login</a>
   </div>
   <div class="footer-col">
@@ -554,189 +363,26 @@ footer{background:var(--deep);border-top:1px solid var(--border);padding:72px 64
   </div>
  </div>
 </footer>
-<script>// SHARED JS FOR ALL PAGES
-document.addEventListener('DOMContentLoaded', function() {
- // CURSOR
- const cursor = document.getElementById('cursor');
- const ring = document.getElementById('cursorRing');
- if(cursor && ring) {
-  document.addEventListener('mousemove', e => {
-   cursor.style.left = e.clientX + 'px';
-   cursor.style.top = e.clientY + 'px';
-   ring.style.left = e.clientX + 'px'; ring.style.top = e.clientY + 'px';
-  });
- }
-
- // PARTICLES
- const canvas = document.getElementById('particles');
- if(canvas) {
-  const ctx = canvas.getContext('2d');
-  canvas.width = window.innerWidth; canvas.height = window.innerHeight;
-  window.addEventListener('resize', () => { canvas.width = window.innerWidth; canvas.height = window.innerHeight; });
-  const particles = [];
-  const colors = ['rgba(212,168,67,','rgba(26,108,255,','rgba(0,208,132,','rgba(230,57,70,'];
-  for(let i=0;i<70;i++) particles.push({x:Math.random()*canvas.width,y:Math.random()*canvas.height,r:Math.random()*1.5+0.3,dx:(Math.random()-.5)*.4,dy:(Math.random()-.5)*.4,color:colors[Math.floor(Math.random()*colors.length)],opacity:Math.random()*.4+.1});
-  function animateP(){ctx.clearRect(0,0,canvas.width,canvas.height);particles.forEach(p=>{ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,Math.PI*2);ctx.fillStyle=p.color+p.opacity+')';ctx.fill();p.x+=p.dx;p.y+=p.dy;if(p.x<0||p.x>canvas.width)p.dx*=-1;if(p.y<0||p.y>canvas.height)p.dy*=-1;});requestAnimationFrame(animateP);}
-  animateP();
- }
-
- // HAMBURGER
- const hamburger = document.getElementById('hamburger');
- const mobileMenu = document.getElementById('mobileMenu');
- if(hamburger && mobileMenu) {
-  hamburger.addEventListener('click', () => {
-   hamburger.classList.toggle('open');
-   mobileMenu.classList.toggle('open');
-   document.body.style.overflow = mobileMenu.classList.contains('open') ? 'hidden' : '';
-  });
- }
-
- // REVEAL
- const reveals = document.querySelectorAll('.reveal');
- const obs = new IntersectionObserver((entries) => {
-  entries.forEach((e,i) => { if(e.isIntersecting){setTimeout(()=>e.target.classList.add('visible'),i*60);obs.unobserve(e.target);}});
- },{threshold:0.08,rootMargin:'0px 0px -30px 0px'});
- reveals.forEach(r => obs.observe(r));
-
- // COUNTERS
- const counterObs = new IntersectionObserver((entries) => {
-  entries.forEach(e => {
-   if(e.isIntersecting){
-    const el=e.target,target=parseInt(el.dataset.target),prefix=el.dataset.prefix||'',suffix=el.dataset.suffix||'';
-    let start=0;const step=target/(2000/16);
-    const timer=setInterval(()=>{start+=step;if(start>=target){start=target;clearInterval(timer);}el.textContent=prefix+Math.floor(start).toLocaleString('en-IN')+suffix;},16);
-    counterObs.unobserve(el);
-   }
-  });
- },{threshold:0.5});
- document.querySelectorAll('[data-target]').forEach(el=>counterObs.observe(el));
-});
-
-function closeMobile(){
- const h=document.getElementById('hamburger'),m=document.getElementById('mobileMenu');
- if(h&&m){h.classList.remove('open');m.classList.remove('open');document.body.style.overflow='';}
-}
-</script>
-
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase-client.js"></script>
 <script>
-
-// Hide Login button if already logged in
-(function(){
- if(localStorage.getItem('hhLoggedIn') === 'true'){
-  var loginBtns = document.querySelectorAll('a[href="login.html"], a[href="login.html?next=signup"]');
-  loginBtns.forEach(function(btn){
-   if(btn.classList.contains('nav-btn-outline') || btn.textContent.trim() === 'Login'){
-    btn.style.display = 'none';
-   }
+  document.addEventListener('DOMContentLoaded', async () => {
+    if(typeof window.supabaseClient === 'undefined') return;
+    const { data: { session } } = await window.supabaseClient.auth.getSession();
+    if(session) {
+      localStorage.setItem('hhLoggedIn', 'true');
+      const navRight = document.querySelector('.nav-right');
+      if(navRight) {
+        navRight.innerHTML = `
+          <a href="dashboard.html" class="nav-btn nav-btn-outline" style="border-color:var(--cyan);color:var(--cyan);margin-right:12px;">Dashboard</a>
+          <button onclick="window.supabaseClient.auth.signOut().then(()=>{localStorage.removeItem('hhLoggedIn');window.location.href='home.html'})" class="nav-btn nav-btn-solid" style="background:rgba(244,63,94,0.1);color:var(--crimson);border:1px solid rgba(244,63,94,0.4);">Sign Out</button>
+        `;
+      }
+    } else {
+      localStorage.removeItem('hhLoggedIn');
+    }
   });
-  // Show logged-in avatar with popup
-  var navRight = document.querySelector('.nav-right');
-  if(navRight && !document.getElementById('nav-user-badge')){
-   var name = localStorage.getItem('hhUserName') || 'Account';
-   var email = localStorage.getItem('hhUserEmail') || '';
-   var first = name.split(' ')[0];
-   var initial = first.charAt(0).toUpperCase();
-
-   // Inject popup CSS once
-   if(!document.getElementById('hhPopupStyle')){
-    var st = document.createElement('style');
-    st.id = 'hhPopupStyle';
-    st.textContent = `
-     #nav-user-badge{position:relative;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;z-index:10001;} @media(max-width:768px){#nav-user-badge{margin-right:8px;}}
-     #nav-user-badge .hh-av{width:22px;height:22px;border-radius:50%;background:linear-gradient(135deg,var(--gold),var(--gold2));color:#0a0a0a;display:flex;align-items:center;justify-content:center;font-size:.75rem;font-weight:700;box-shadow:0 0 8px rgba(212,168,67,0.45),0 0 20px rgba(212,168,67,0.15);transition:box-shadow .2s;}
-     #nav-user-badge:hover .hh-av{box-shadow:0 0 16px rgba(212,168,67,0.7),0 0 30px rgba(212,168,67,0.3);}
-     #nav-user-badge .hh-name{font-family:'Rajdhani',sans-serif;font-size:.55rem;font-weight:700;letter-spacing:.03em;color:var(--gold);text-transform:none;max-width:65px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:center;line-height:1;}
-     #hh-popup{position:fixed;top:90px;right:8px;width:230px;background:#111;border:1px solid rgba(212,168,67,0.3);border-radius:14px;padding:20px 18px 16px;box-shadow:0 12px 40px rgba(0,0,0,0.7),0 0 0 1px rgba(212,168,67,0.08);opacity:0;transform:translateY(-8px) scale(.97);pointer-events:none;transition:all .2s ease;max-height:calc(100vh - 100px);overflow-y:auto;}
-     #hh-popup.open{opacity:1;transform:translateY(0) scale(1);pointer-events:all;}
-     #hh-popup .pp-av{width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,var(--gold),var(--gold2));color:#0a0a0a;display:flex;align-items:center;justify-content:center;font-size:1.4rem;font-weight:700;margin:0 auto 10px;box-shadow:0 0 16px rgba(212,168,67,0.5);}
-     #hh-popup .pp-uname{text-align:center;font-family:'Bebas Neue',sans-serif;font-size:1rem;letter-spacing:.1em;color:var(--gold);margin-bottom:3px;}
-     #hh-popup .pp-email{text-align:center;font-size:.72rem;color:rgba(240,237,232,0.4);font-family:'Rajdhani',sans-serif;margin-bottom:14px;word-break:break-all;line-height:1.4;}
-     #hh-popup hr{border:none;border-top:1px solid rgba(212,168,67,0.12);margin-bottom:12px;}
-     #hh-popup .pp-signout{width:100%;padding:9px;border-radius:8px;background:linear-gradient(135deg,var(--gold),var(--gold2));color:#0a0a0a;font-family:'Bebas Neue',sans-serif;font-size:.9rem;letter-spacing:.12em;border:none;cursor:pointer;margin-bottom:8px;transition:opacity .15s;}
-     #hh-popup .pp-signout:hover{opacity:.85;}
-     #hh-popup .pp-close{width:100%;padding:8px;border-radius:8px;background:transparent;border:1px solid rgba(212,168,67,0.2);color:rgba(240,237,232,0.4);font-family:'Rajdhani',sans-serif;font-size:.78rem;letter-spacing:.1em;cursor:pointer;transition:all .15s;}
-     #hh-popup .pp-close:hover{border-color:rgba(212,168,67,0.5);color:var(--gold);}
-     @media(max-width:768px){#hh-popup{right:-8px;width:210px;}}
-    `;
-    document.head.appendChild(st);
-   }
-
-   // Build badge
-   var badge = document.createElement('div');
-   badge.id = 'nav-user-badge';
-   badge.innerHTML = `
-    <div class="hh-av">${initial}</div>
-    <div class="hh-name">${name}</div>
-    <div id="hh-popup">
-     <div class="pp-av">${initial}</div>
-     <div class="pp-uname">${name.toUpperCase()}</div>
-     <div class="pp-email">${email}</div>
-     <hr/>
-     <button class="pp-signout" id="hh-signout-btn">SIGN OUT</button>
-     <button class="pp-close" id="hh-close-btn">✕ CLOSE</button>
-    </div>
-   `;
-   navRight.insertBefore(badge, navRight.firstChild);
-
-   // Toggle popup
-   badge.addEventListener('click', function(e){
-    var popup = document.getElementById('hh-popup');
-    popup.classList.toggle('open');
-    e.stopPropagation();
-   });
-
-   // Sign out
-   document.getElementById('hh-signout-btn').addEventListener('click', function(e){
-    e.stopPropagation();
-    localStorage.removeItem('hhLoggedIn');
-    localStorage.removeItem('hhUserName');
-    localStorage.removeItem('hhUserEmail');
-    localStorage.removeItem('hhUserPicture');
-    window.location.href = 'home.html';
-   });
-
-   // Close btn
-   document.getElementById('hh-close-btn').addEventListener('click', function(e){
-    e.stopPropagation();
-    document.getElementById('hh-popup').classList.remove('open');
-   });
-
-   // Click outside closes
-   document.addEventListener('click', function(){
-    var p = document.getElementById('hh-popup');
-    if(p) p.classList.remove('open');
-   });
-  }
- }
-})();
-// Show pricing in nav only if user is logged in
-(function(){
- if(localStorage.getItem('hhLoggedIn') === 'true') {
-  var links = document.querySelector('.nav-links');
-  var mobile = document.getElementById('mobileMenu');
-  if(links) {
-   // Only add Pricing if not already in nav
-   if(!links.querySelector('a[href="pricing.html"]')){
-    var a = document.createElement('a');
-    a.href = 'pricing.html';
-    a.textContent = 'Pricing';
-    var ref = links.querySelector('a[href="contact.html"]');
-    if(ref) links.insertBefore(a, ref);
-   }
-  }
-  if(mobile) {
-   // Only add Pricing to mobile if not already there
-   if(!mobile.querySelector('a[href="pricing.html"]')){
-    var ma = document.createElement('a');
-    ma.href = 'pricing.html';
-    ma.textContent = 'Pricing';
-    ma.onclick = function(){closeMobile();};
-    var mref = mobile.querySelector('a[href="contact.html"]');
-    if(mref) mobile.insertBefore(ma, mref);
-   }
-  }
- }
-})();
 </script>
+<script src="hh-ux-effects.js"></script>
 </body>
 </html>
