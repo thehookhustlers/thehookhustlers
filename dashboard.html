@@ -102,7 +102,587 @@
     .m-sub { font-size:.8rem; color:var(--muted); margin-bottom:12px; }
     .m-tag { display:inline-block; font-size:.65rem; background:rgba(6,182,212,0.15); color:var(--cyan); padding:3px 8px; border-radius:4px; text-transform:uppercase; letter-spacing:.05em; margin-right:4px; margin-bottom:4px; }
 
-<link rel="stylesheet" href="hh-global.css">
+    
+    .nav-links { display:flex; gap:32px; align-items:center; }
+    .nav-links a { color:var(--white); text-decoration:none; font-family:'Rajdhani',sans-serif; font-size:.9rem; font-weight:600; text-transform:uppercase; letter-spacing:.08em; transition:color .2s; }
+    .nav-links a:hover { color:var(--vivid2); text-shadow:0 0 10px rgba(124,58,237,0.4); }
+    @media(max-width:900px) { .nav-links { display:none; } }
+
+    @media(max-width:900px){ .grid-2 { grid-template-columns:1fr; } nav{padding:12px 24px;} .dashboard-wrap{padding:100px 24px 40px;} }
+  
+/* ── UNIVERSAL TOUCH DEVICE FIX: Hide custom cursor on mobile/tablets to prevent sticking ── */
+@media (hover: none) and (pointer: coarse), (max-width: 1024px) {
+  #cursor, #cursorRing, .cursor, .cursor-ring, #hh-cursor, #hh-ring, .hh-trail {
+    display: none !important; opacity: 0 !important; visibility: hidden !important;
+  }
+  body, html, * { cursor: auto !important; }
+}
+</style>
+
+
+  <script>
+    // 1. Auth Guard
+    async function checkAuth() {
+      const { data: { session }, error } = await supabaseClient.auth.getSession();
+      if (!session) {
+        window.location.href = 'login.html';
+        return null;
+      }
+      
+      const user = session.user;
+      
+      // UNIVERSAL USER LOGGING & TIER FETCH
+      try {
+        const { data: dirData } = await supabaseClient.from('users_directory').upsert({
+          id: user.id,
+          name: user.user_metadata?.full_name || 'System User',
+          email: user.email,
+          last_active: new Date().toISOString()
+        }, { onConflict: 'id' }).select('tier').single();
+        
+        if (dirData && dirData.tier) {
+          user.tier = dirData.tier;
+        }
+      } catch(err) {
+        console.warn('User directory log ignored:', err);
+      }
+      
+      return user;
+    }
+
+    // 2. Fetch User Profile (Determines if Startup or Investor)
+    async function loadDashboard() {
+      const user = await checkAuth();
+      if (!user) return; // Auth guard caught them
+      
+      window.currentUserTier = user.tier;
+
+      // Check Startups table
+      const { data: startupData, error: sErr } = await supabaseClient
+        .from('startups')
+        .select('*')
+        .eq('id', user.id)
+        .single();
+      
+      if (startupData) {
+        renderStartupDashboard(startupData);
+        return;
+      }
+
+      // Check Investors table
+      const { data: investorData, error: iErr } = await supabaseClient
+        .from('investors')
+        .select('*')
+        .eq('id', user.id)
+        .single();
+      
+      if (investorData) {
+        renderInvestorDashboard(investorData);
+        return;
+      }
+
+      // Fallback: This means the user signed up via Google but hasn't entered their Startup/Investor details yet
+      document.getElementById('loadingState').style.display = 'none';
+      document.getElementById('onboardingUI').style.display = 'block';
+    }
+
+    function renderStartupDashboard(data) {
+      document.getElementById('loadingState').style.display = 'none';
+      const ui = document.getElementById('startupUI');
+      ui.style.display = 'block';
+
+      // Fill header
+      document.getElementById('s-title').textContent = 'Welcome, ' + data.founder_name;
+      document.getElementById('s-company').textContent = data.company_name;
+      
+      // Tier Badge
+      if (window.currentUserTier) {
+        const tierBadge = document.createElement('span');
+        tierBadge.className = 'badge';
+        tierBadge.style.background = 'linear-gradient(135deg, var(--vivid), var(--vivid2))';
+        tierBadge.style.color = 'white';
+        tierBadge.style.marginLeft = '10px';
+        tierBadge.textContent = window.currentUserTier.toUpperCase();
+        document.getElementById('s-title').appendChild(tierBadge);
+      }
+
+      // Fill profile card
+      document.getElementById('s-ind').textContent = data.industry || 'Unknown';
+      document.getElementById('s-stage').textContent = data.stage || 'Unknown';
+      document.getElementById('s-city').textContent = data.city || 'Unknown';
+      document.getElementById('s-dpiit').textContent = data.dpiit_number ? 'Verified' : 'Pending';
+      if(data.dpiit_number) {
+        document.getElementById('s-dpiit').style.color = 'var(--emerald)';
+      }
+
+      // Handle Pitch Deck Status
+      const deckBtn = document.getElementById('deckBtn');
+      // Hybrid check: DB OR localStorage (for immediate refresh sync)
+      const hasSubmittedDeck = data.pitch_deck_url || localStorage.getItem('hh_deck_submitted') === 'true';
+      
+      if(hasSubmittedDeck) {
+        const deckBtnWrap = deckBtn?.parentElement;
+        if(deckBtnWrap) {
+          deckBtnWrap.innerHTML = `
+            <div style="background:rgba(16,217,157,0.05); border:1px solid rgba(16,217,157,0.2); padding:20px; border-radius:12px; text-align:center; min-width:280px;">
+              <div style="color:var(--emerald); font-weight:700; margin-bottom:8px; font-size:1.1rem;">DECK SUBMITTED ✔</div>
+              <p style="color:var(--muted); font-size:0.85rem; line-height:1.5; margin:0;">
+                We are currently auditing your deck to match you with top-tier capital. Our analysts will reach out to you shortly via email with next steps.
+              </p>
+            </div>
+          `;
+        }
+      }
+
+      // Score logic based on completeness
+      let score = 50;
+      if(data.dpiit_number) score += 20;
+      if(hasSubmittedDeck) score += 15;
+      if(data.funding_needed) score += 15;
+      document.getElementById('s-score').textContent = score;
+      document.getElementById('scoreRing').style.background = `conic-gradient(var(--emerald) 0%, var(--emerald) ${score}%, var(--deep) ${score}%, var(--deep) 100%)`;
+
+      // New: Analytics section
+      const analyticsContainer = document.createElement('div');
+      analyticsContainer.id = 's-analytics';
+      ui.querySelector('.db-card:first-child').appendChild(analyticsContainer);
+      fetchAnalytics(data.id, 's-analytics');
+    }
+
+    function renderInvestorDashboard(data) {
+      document.getElementById('loadingState').style.display = 'none';
+      const ui = document.getElementById('investorUI');
+      ui.style.display = 'block';
+
+      // Fill header
+      document.getElementById('i-title').textContent = 'Welcome, ' + data.full_name;
+      document.getElementById('i-type').textContent = data.investor_type || 'Investor';
+
+      // Tier Badge
+      if (window.currentUserTier) {
+        const tierBadge = document.createElement('span');
+        tierBadge.className = 'badge';
+        tierBadge.style.background = 'linear-gradient(135deg, var(--cyan), var(--vivid))';
+        tierBadge.style.color = 'white';
+        tierBadge.style.marginLeft = '10px';
+        tierBadge.textContent = window.currentUserTier.toUpperCase();
+        document.getElementById('i-title').appendChild(tierBadge);
+      }
+
+      // Fill profile
+      document.getElementById('i-ticket').textContent = data.ticket_size || 'Unknown';
+      const kycField = document.getElementById('i-kyc');
+      const kycStatusTxt = document.getElementById('kycStatusTxt');
+      const kycBtn = document.getElementById('kycBtn');
+
+      // Hybrid check: DB OR localStorage
+      const hasSubmittedKYC = data.kyc_url || localStorage.getItem('hh_kyc_submitted') === 'true';
+
+      if (data.is_kyc_verified === true) {
+        if(kycStatusTxt) {
+          kycStatusTxt.textContent = 'Verified ✔';
+          kycStatusTxt.style.color = 'var(--emerald)';
+          kycStatusTxt.style.fontWeight = '700';
+        }
+        if(kycBtn && kycBtn.parentElement) kycBtn.parentElement.style.display = 'none';
+      } else if (hasSubmittedKYC) {
+        if(kycStatusTxt) {
+          kycStatusTxt.textContent = 'Under Review ⏳';
+          kycStatusTxt.style.color = 'var(--cyan)';
+          kycStatusTxt.style.fontWeight = '600';
+        }
+        // Replace upload button with processing message
+        const kycBtnWrap = kycBtn?.parentElement;
+        if(kycBtnWrap) {
+          kycBtnWrap.innerHTML = `
+            <div style="margin-top:15px; background:rgba(6,182,212,0.05); border:1px solid rgba(6,182,212,0.2); padding:15px; border-radius:8px; min-width:240px;">
+              <p style="color:var(--muted); font-size:0.8rem; line-height:1.4; margin:0;">
+                ID received. Our compliance team is verifying your credentials to grant your platform license. Check back in 24 hours.
+              </p>
+            </div>
+          `;
+        }
+      }
+
+      // New: Analytics section
+      const analyticsContainer = document.createElement('div');
+      analyticsContainer.id = 'i-analytics';
+      ui.querySelector('.db-card:first-child').appendChild(analyticsContainer);
+      fetchAnalytics(data.id, 'i-analytics');
+    }
+
+    async function fetchAnalytics(userId, containerId) {
+      const container = document.getElementById(containerId);
+      if(!container) return;
+
+      try {
+        // Fetch Deck Views (Target is Me)
+        const { count: views } = await supabaseClient.from('contacts').select('*', { count: 'exact', head: true }).eq('target_id', userId).eq('type', 'view');
+        // Fetch Interests Received (Target is Me)
+        const { count: received } = await supabaseClient.from('contacts').select('*', { count: 'exact', head: true }).eq('target_id', userId).eq('type', 'interest');
+        // Fetch Interests Sent (Source is Me)
+        const { count: sent } = await supabaseClient.from('contacts').select('*', { count: 'exact', head: true }).eq('user_id', userId).eq('type', 'interest');
+
+        container.innerHTML = `
+          <div class="analytics-grid">
+            <div class="stat-mini-box">
+              <div class="stat-mini-num">${views || 0}</div>
+              <div class="stat-mini-label">Deck Views</div>
+            </div>
+            <div class="stat-mini-box">
+              <div class="stat-mini-num">${received || 0}</div>
+              <div class="stat-mini-label">Matches</div>
+            </div>
+            <div class="stat-mini-box" style="grid-column: span 2;">
+              <div class="stat-mini-num" style="font-size:1.2rem; background:linear-gradient(135deg, var(--emerald), var(--cyan)); -webkit-background-clip:text; -webkit-text-fill-color:transparent;">${sent || 0} Interests Sent</div>
+              <div class="stat-mini-label">Matchmaking Activity</div>
+            </div>
+          </div>
+        `;
+      } catch (err) {
+        console.warn('Analytics fetch failed:', err);
+      }
+    }
+
+    async function handleSignOut() {
+      await window.supabaseClient.auth.getSession().then(({data:{session}})=>{
+        if(session) window.supabaseClient.auth.signOut();
+      });
+      localStorage.removeItem('hhLoggedIn');
+      localStorage.removeItem('hh_deck_submitted');
+      localStorage.removeItem('hh_kyc_submitted');
+      window.location.href = 'login.html';
+    }
+
+    document.addEventListener('DOMContentLoaded', loadDashboard);
+  
+    async function completeGoogleOnboarding(type) {
+      const user = await checkAuth();
+      if (!user) return;
+
+      const btnId = type === 'startup' ? 'ob-s-btn' : 'ob-i-btn';
+      const btn = document.getElementById(btnId);
+      btn.textContent = "Processing...";
+      btn.style.opacity = "0.7";
+
+      if (type === 'startup') {
+        const name = document.getElementById('ob-s-name').value;
+        const ind = document.getElementById('ob-s-ind').value;
+        if (!name) { alert("Please enter Startup Name"); btn.textContent = "Launch Dashboard →"; btn.style.opacity="1"; return; }
+        
+        const { error: sErr } = await supabaseClient.from('startups').insert([{
+          id: user.id,
+          email: user.email,
+          founder_name: user.user_metadata?.full_name || 'Founder',
+          company_name: name,
+          industry: ind,
+          stage: 'Idea Stage',
+          city: 'India'
+        }]);
+        
+        if (sErr) {
+          alert("Database Error: " + sErr.message + "\n\n(You likely need to update your RLS policies in Supabase to allow INSERTs!)");
+          btn.textContent = "Launch Dashboard →"; btn.style.opacity="1";
+          return;
+        }
+        
+        // Sync to universal directory
+        await supabaseClient.from('users_directory').update({ user_type: 'Startup' }).eq('id', user.id);
+
+      } else {
+        const name = document.getElementById('ob-i-name').value;
+        const tkt = document.getElementById('ob-i-ticket').value;
+        if (!name) { alert("Please enter Entity Name"); btn.textContent = "Launch Dashboard →"; btn.style.opacity="1"; return; }
+
+        const { error: iErr } = await supabaseClient.from('investors').insert([{
+          id: user.id,
+          email: user.email,
+          full_name: name,
+          investor_type: 'Angel Investor',
+          ticket_size: tkt
+        }]);
+        
+        if (iErr) {
+          alert("Database Error: " + iErr.message + "\n\n(You likely need to update your RLS policies in Supabase to allow INSERTs!)");
+          btn.textContent = "Launch Dashboard →"; btn.style.opacity="1";
+          return;
+        }
+
+        // Sync to universal directory
+        await supabaseClient.from('users_directory').update({ user_type: 'Investor' }).eq('id', user.id);
+      }
+      
+      // Reload to show correct dashboard payload
+      window.location.reload();
+    }
+
+    // Advanced Match Scoring Engine
+    function calculateMatchScore(item, type) {
+      let score = 40; // Base score
+      
+      if (type === 'startup') {
+        if (item.company_name) score += 10;
+        if (item.stage && item.stage !== 'Idea Stage') score += 10;
+        if (item.industry) score += 5;
+        if (item.dpiit_number) score += 15;
+        if (item.pitch_deck_url) score += 15;
+        if (item.city && item.city !== 'India') score += 5;
+      } else {
+        // Investor scoring
+        if (item.full_name) score += 10;
+        if (item.investor_type && item.investor_type.includes('VC')) score += 20;
+        if (item.ticket_size && item.ticket_size !== 'Flexible') score += 15;
+        if (item.bio) score += 15;
+      }
+      return Math.min(score, 100);
+    }
+
+    // Social & Tracking Logic
+    window.toggleInterest = async function(targetId, btn) {
+      if (localStorage.getItem(`hh_interest_${targetId}`) === 'true') {
+        alert("You have already expressed interest in this profile! Our team is processing the connection.");
+        return;
+      }
+      
+      const svg = btn.querySelector('svg');
+      svg.style.fill = '#f43f5e';
+      svg.style.stroke = '#f43f5e';
+      btn.classList.add('active');
+      
+      await window.trackInteraction(targetId, 'interest');
+      alert("Interest Sent! ❤️\n\nThe Hook Hustlers matching engine has notified the partner. If there's a mutual match, you'll see them in your priority incoming inbox shortly!");
+    }
+
+
+    async function fetchStartupMatches() {
+      // Startups see Investors
+      const { data, error } = await supabaseClient.from('investors').select('*').limit(12);
+      const grid = document.getElementById('liveInvestorGrid');
+      grid.innerHTML = '';
+      
+      if (error || !data || data.length === 0) {
+        grid.innerHTML = '<div style="color:var(--muted);">No investors found matching your exact profile yet. Check back soon!</div>';
+        return;
+      }
+      
+      data.forEach(inv => {
+        let name = inv.full_name || 'Anonymous Investor';
+        let type = inv.investor_type || 'Angel Investor';
+        let ticket = inv.ticket_size || 'Flexible';
+        
+        // GATING & SCORING LOGIC
+        const isPremium = !!window.currentUserTier;
+        const isInterested = localStorage.getItem(`hh_interest_${inv.id}`) === 'true';
+        const score = calculateMatchScore(inv, 'investor');
+
+        let card = document.createElement('div');
+        card.className = 'match-card';
+        
+        let interestBtnHtml = '';
+        if (isPremium) {
+          interestBtnHtml = `
+            <button onclick="window.toggleInterest('${inv.id}', this)" class="interest-btn ${isInterested ? 'active' : ''}" title="Express Interest">
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="${isInterested ? '#f43f5e' : 'none'}" stroke="${isInterested ? '#f43f5e' : 'currentColor'}" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>
+            </button>
+          `;
+        } else {
+          interestBtnHtml = `
+            <button onclick="window.location.href='pricing.html'" class="interest-btn" title="Upgrade to Unlock" style="background:rgba(255,255,255,0.05); color:var(--muted);">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+            </button>
+          `;
+        }
+
+        card.innerHTML = `
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+              <div class="m-name">${name}</div>
+              <div style="display:flex;gap:8px;align-items:center;">
+                <span class="badge badge-investor" style="font-size:0.5rem;${score>=80 ? 'color:var(--emerald);border-color:rgba(16,217,157,0.3);background:rgba(16,217,157,0.1);' : ''}">Score: ${score}</span>
+                ${interestBtnHtml}
+              </div>
+            </div>
+            <div class="m-sub">${type} • ${ticket}</div>
+            <div style="margin-top:10px;">
+              <span class="m-tag">ACTIVE INVESTOR</span>
+              <span class="m-tag" style="background:rgba(16,217,157,0.1);color:var(--emerald);">KYC VERIFIED</span>
+            </div>
+        `;
+        grid.appendChild(card);
+      });
+    }
+
+    async function fetchInvestorMatches() {
+      // Investors see Startups
+      const { data, error } = await supabaseClient.from('startups').select('*').order('created_at', { ascending: false }).limit(12);
+      const grid = document.getElementById('liveStartupGrid');
+      grid.innerHTML = '';
+      
+      if (error || !data || data.length === 0) {
+        grid.innerHTML = '<div style="color:var(--muted);">No new startups found matching your thesis.</div>';
+        return;
+      }
+      
+      data.forEach(st => {
+        let name = st.company_name || 'Stealth Startup';
+        let stage = st.stage || 'Idea Stage';
+        let ind = (st.industry || 'Tech').toUpperCase();
+        let city = st.city || 'India';
+        
+        // GATING & SCORING LOGIC
+        const isPremium = !!window.currentUserTier;
+        const isInterested = localStorage.getItem(`hh_interest_${st.id}`) === 'true';
+        const score = calculateMatchScore(st, 'startup');
+
+        let card = document.createElement('div');
+        card.className = 'match-card';
+        
+        let interestBtnHtml = '';
+        if (isPremium) {
+          interestBtnHtml = `
+            <button onclick="window.toggleInterest('${st.id}', this)" class="interest-btn ${isInterested ? 'active' : ''}" title="Express Interest">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="${isInterested ? '#f43f5e' : 'none'}" stroke="${isInterested ? '#f43f5e' : 'currentColor'}" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>
+            </button>
+          `;
+        } else {
+          interestBtnHtml = `
+            <button onclick="window.location.href='pricing.html'" class="interest-btn" title="Upgrade to Unlock" style="background:rgba(255,255,255,0.05); color:var(--muted);">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+            </button>
+          `;
+        }
+
+        card.innerHTML = `
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+              <div class="m-name">${name}</div>
+              <div style="display:flex;gap:8px;align-items:center;">
+                <span class="badge badge-startup" style="font-size:0.5rem;${score>=80 ? 'color:var(--emerald);border-color:rgba(16,217,157,0.3);background:rgba(16,217,157,0.1);' : ''}">Score: ${score}</span>
+                ${interestBtnHtml}
+              </div>
+            </div>
+            <div class="m-sub">${stage} • ${city}</div>
+            <div style="margin-top:10px;">
+              <span class="m-tag" style="background:rgba(124,58,237,0.15);color:var(--vivid2);">${ind}</span>
+              ${st.dpiit_number ? '<span class="m-tag" style="background:rgba(16,217,157,0.1);color:var(--emerald);">DPIIT</span>' : ''}
+              ${st.pitch_deck_url ? (isPremium ? `<span class="m-tag" style="background:rgba(6,182,212,0.1);color:var(--cyan);cursor:pointer;" onclick="window.trackInteraction('${st.id}', 'view'); window.open('${st.pitch_deck_url}', '_blank')">DECK</span>` : `<span class="m-tag" style="background:rgba(255,255,255,0.05);color:var(--muted);cursor:pointer;" onclick="window.location.href='pricing.html'">DECK ❤️</span>`) : ''}
+            </div>
+        `;
+        grid.appendChild(card);
+      });
+    }
+
+
+    window.uploadPitchDeck = async function(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      
+      const user = await checkAuth();
+      if (!user) return;
+      
+      const deckBtn = document.getElementById('deckBtn');
+      const originalText = deckBtn.innerHTML;
+      deckBtn.innerHTML = "Uploading Document...";
+      deckBtn.style.opacity = "0.7";
+
+      try {
+        const fileExt = file.name.split('.').pop();
+        const filePath = `${user.id}/pitch_deck_${Date.now()}.${fileExt}`;
+        
+        // Force upload with upsert
+        const { error: uploadError } = await window.supabaseClient.storage.from('documents').upload(filePath, file, { cacheControl: '3600', upsert: true });
+        if (uploadError) throw uploadError;
+        
+        const { data: { publicUrl } } = window.supabaseClient.storage.from('documents').getPublicUrl(filePath);
+        
+        const { error: updateError } = await window.supabaseClient.from('startups').update({ pitch_deck_url: publicUrl }).eq('id', user.id);
+        if (updateError) throw updateError;
+        
+        // Sync hybrid state
+        localStorage.setItem('hh_deck_submitted', 'true');
+
+        deckBtn.style.background = "var(--emerald)";
+        deckBtn.style.color = "#000";
+        deckBtn.innerHTML = "Submission Successful!";
+        
+        alert("Success! Your Pitch Deck has been securely uploaded to our master database.\n\nOur internal team will review your deck and reach out to you shortly via email with next steps!");
+        setTimeout(() => window.location.reload(), 1500);
+        
+      } catch (err) {
+        alert("Upload Blocked: " + err.message + "\n\nPlease make sure your Supabase 'documents' bucket has public insert policies enabled.");
+        deckBtn.innerHTML = "Upload Failed";
+        setTimeout(() => { deckBtn.innerHTML = originalText; deckBtn.style.opacity = "1"; }, 3000);
+      }
+    }
+
+    window.uploadKYC = async function(event) {
+      const file = event.target.files[0];
+      if (!file || !file.name) { alert("Please select a valid image or PDF."); return; }
+      
+      const user = await checkAuth();
+      if (!user) return;
+      
+      const kycBtn = document.getElementById('kycBtn');
+      const originalText = kycBtn.innerHTML;
+      kycBtn.innerHTML = "Uploading...";
+      kycBtn.style.opacity = "0.7";
+
+      try {
+        const fileExt = file.name.split('.').pop();
+        const filePath = `${user.id}/kyc_${Date.now()}.${fileExt}`;
+        
+        const { error: uploadError } = await window.supabaseClient.storage.from('documents').upload(filePath, file, { cacheControl: '3600', upsert: true });
+        if (uploadError) throw uploadError;
+        
+        const { data: { publicUrl } } = window.supabaseClient.storage.from('documents').getPublicUrl(filePath);
+        
+        const { error: updateError } = await window.supabaseClient.from('investors').update({ kyc_url: publicUrl }).eq('id', user.id);
+        if (updateError) throw updateError;
+        
+        // Sync hybrid state
+        localStorage.setItem('hh_kyc_submitted', 'true');
+
+        kycBtn.style.background = "var(--vivid-glow)";
+        kycBtn.style.color = "var(--white)";
+        kycBtn.style.borderColor = "var(--vivid)";
+        kycBtn.innerHTML = "Submitted!";
+        
+        alert("Success! Your ID document has been securely uploaded and encrypted in our master database.\n\nOur verification team will review it within 24 hours. Your dashboard has been updated to 'Under Review ⏳'.");
+        setTimeout(() => window.location.reload(), 1500);
+        
+      } catch (err) {
+        alert("Upload Error: " + err.message + "\n\n(Did you create the documents storage bucket?)");
+        kycBtn.innerHTML = "Upload Failed";
+        setTimeout(() => { kycBtn.innerHTML = originalText; kycBtn.style.opacity = "1"; }, 3000);
+      }
+    }
+
+    // Mobile Menu Toggle
+    document.addEventListener('DOMContentLoaded', () => {
+      const hamburger = document.getElementById('hamburger');
+      const mobileMenu = document.getElementById('mobileMenu');
+      if (hamburger && mobileMenu) {
+        hamburger.addEventListener('click', () => {
+          hamburger.classList.toggle('open');
+          mobileMenu.classList.toggle('open');
+        });
+      }
+      window.closeMobile = function() {
+        if (hamburger) hamburger.classList.remove('open');
+        if (mobileMenu) mobileMenu.classList.remove('open');
+      };
+    });
+</script>
+<style>
+.hamburger{display:none;flex-direction:column;gap:5px;cursor:pointer;background:none;border:none;padding:4px;}
+.hamburger span{display:block;width:24px;height:2px;background:var(--vivid2);border-radius:2px;transition:all .3s;}
+.hamburger.open span:nth-child(1){transform:translateY(7px) rotate(45deg);}
+.hamburger.open span:nth-child(2){opacity:0;}
+.hamburger.open span:nth-child(3){transform:translateY(-7px) rotate(-45deg);}
+.mobile-menu{display:none;position:fixed;inset:0;background:rgba(5,5,8,.98);backdrop-filter:blur(20px);z-index:20000;flex-direction:column;align-items:center;justify-content:center;padding-top:80px;padding-bottom:30px;gap:0;overflow-y:auto;opacity:0;pointer-events:none;transition:opacity .3s;}
+.mobile-menu.open{opacity:1;pointer-events:all;}
+.mobile-menu a{font-family:'Bebas Neue',sans-serif;font-size:1.9rem;letter-spacing:.1em;color:var(--white);text-decoration:none;transition:color .2s;padding:10px 0;display:block;width:100%;text-align:center;}
+.mobile-menu a:hover{color:var(--vivid2);}
+@media(max-width:768px){ .hamburger{display:flex;} .mobile-menu{display:flex;} .nav-right{display:none !important;} .nav-links{display:none;} nav{padding:10px 16px;} }
+</style>
 </head>
 <body>
   <div class="bg-mesh"></div>

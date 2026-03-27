@@ -1,115 +1,144 @@
 (function() {
-    // Only run on mobile screens (< 768px)
-    if (!window.matchMedia('(max-width: 768px)').matches) return;
-
-    // 1. CSS OVERRIDE INJECTION
-    const style = document.createElement('style');
-    style.textContent = `
-        /* Force natural scroll and prevent horizontal overflow */
-        html, body {
-            overflow-x: hidden !important;
-            width: 100vw !important;
-            height: auto !important;
-            margin: 0 !important;
-            padding: 0 !important;
-            -webkit-overflow-scrolling: touch;
-        }
-
-        /* Aggregate Cleanup: Kill all runaway background elements */
-        canvas, .hero-mesh, .grid-mesh, #particles, #particleCanvas, 
-        .orb, .glow, .cta-glow1, .cta-glow2, .waitlist-glow, 
-        .hh-trail, #hh-cursor, #hh-ring, #cursor, #cursorRing, .cursor, .cursor-ring {
-            display: none !important;
-            height: 0 !important;
-            width: 0 !important;
-            opacity: 0 !important;
-            position: absolute !important;
-            pointer-events: none !important;
-        }
-
-        /* HEIGHT COMPRESSION: Reduce excessive section heights */
-        section, .sec-inner, .page-hero, .hero, .cta-section, .stats, .feat-grid, .how {
-            min-height: 0 !important;
-            height: auto !important;
-            padding-top: 48px !important;
-            padding-bottom: 48px !important;
-        }
+    // Only run on mobile screens
+    if (window.matchMedia('(max-width: 768px)').matches) {
         
-        .hero { padding-top: 100px !important; padding-bottom: 60px !important; }
+        // 1. AGGRESSIVE CLEANUP: Remove legacy bubbles/particles/trails
+        function cleanupLegacy() {
+            // Remove particle canvas
+            const legacyCanvas = document.getElementById('particles') || document.getElementById('particleCanvas');
+            if (legacyCanvas) legacyCanvas.remove();
 
-        /* Tighter grid/flex gaps */
-        .stats-inner, .steps, .cards-grid, .vc-grid, .tier-grid, .sectors-grid {
-            gap: 16px !important;
+            // Remove cursor trails and orbs
+            document.querySelectorAll('.hh-trail, .orb, #hh-cursor, #hh-ring, #cursor, #cursorRing').forEach(el => el.remove());
+
+            // Disable background glow if it sticks
+            const bgGlow = document.getElementById('hh-bg-glow');
+            if (bgGlow) bgGlow.style.display = 'none';
         }
-        
-        .stat-box, .step, .feat, .price-card, .vc-card {
-            padding: 32px 20px !important;
+
+        // Run immediately and also on DOMContentLoaded
+        cleanupLegacy();
+        document.addEventListener('DOMContentLoaded', cleanupLegacy);
+        // Also run periodic cleanup to catch late-injected elements
+        const cleanupInterval = setInterval(cleanupLegacy, 500);
+        setTimeout(() => clearInterval(cleanupInterval), 3000);
+
+        // 2. INJECT SUBTLE RIPPLE & LAYOUT CSS
+        const style = document.createElement('style');
+        style.textContent = `
+            /* Fix excessive padding and blank spaces on mobile */
+            section, .page-hero, .cta-section, .how, .stats, .tier-section, .features-section, .founder-section, .reviews-section {
+                min-height: 0 !important;
+                height: auto !important;
+                padding: 40px 16px !important;
+            }
+            .sec-inner, .stats-inner {
+                padding: 0 !important;
+                margin: 0 !important;
+            }
+            .hero, .page-hero { 
+                padding: 110px 16px 40px !important; 
+                min-height: 0 !important;
+            }
+            /* Eliminate massive gaps between text elements */
+            h1, h2, h3, h4, p, .sec-title, .sec-sub, .sec-label, .journey-header, .how-head, .hero-sub, .hero-actions, .hero-trust {
+                margin-bottom: 16px !important;
+                margin-top: 0 !important;
+            }
+            /* Tighten grids and cards */
+            .steps, .feat-grid, .vc-grid, .tier-grid, .sectors-grid, .how-grid {
+                gap: 16px !important;
+                margin-bottom: 24px !important;
+            }
+            .stat-box, .step, .feat, .price-card, .vc-card, .tier-card, .sector-card, .journey-col {
+                padding: 24px 16px !important;
+                margin-bottom: 12px !important;
+            }
+            .footer-inner {
+                gap: 24px !important;
+            }
+            footer {
+                padding: 40px 16px 20px !important;
+            }
+
+            /* Subtle Touch Ripple */
+            .hh-touch-ripple {
+                position: fixed;
+                width: 16px;
+                height: 16px;
+                background: rgba(124, 58, 237, 0.6);
+                border-radius: 50%;
+                pointer-events: none;
+                z-index: 999999;
+                transform: translate(-50%, -50%) scale(0.5);
+                opacity: 0;
+                transition: transform 0.3s ease-out, opacity 0.3s ease-out;
+            }
+            .hh-touch-ripple.active {
+                transform: translate(-50%, -50%) scale(1.2);
+                opacity: 1;
+            }
+            /* Force-show page-hero content on mobile (fadeUp animation unreliable) */
+            .page-hero-content *,
+            .page-hero-content .sec-label,
+            .page-hero-content .sec-title,
+            .page-hero-content .sec-sub,
+            .page-hero-content h1,
+            .page-hero-content p,
+            .hero-badge, .hero h1, .hero-sub, .hero-actions, .hero-trust {
+                opacity: 1 !important;
+                animation: none !important;
+                transform: none !important;
+            }
+            /* Tighten investor-specific sections */
+            .inv-type-section {
+                padding: 32px 16px !important;
+            }
+            .inv-type-section .inv-types {
+                gap: 12px !important;
+            }
+            .inv-type-card {
+                padding: 16px 10px !important;
+            }
+            /* Tighten onboarding card */
+            [style*="grid-column:1/-1"][style*="padding:80px 40px"] {
+                padding: 32px 16px !important;
+            }
+            /* Reduce gap between stat items at bottom of onboarding card */
+            [style*="gap:40px"][style*="margin-top:48px"] {
+                gap: 16px !important;
+                margin-top: 24px !important;
+                padding-top: 16px !important;
+            }
+            /* Force hide legacy elements via CSS as well */
+            #particles, .hh-trail, .trail, .orb, #hh-cursor, #hh-ring, #cursor, #cursorRing, #hh-bg-glow {
+                display: none !important;
+                opacity: 0 !important;
+                visibility: hidden !important;
+            }
+        `;
+        document.head.appendChild(style);
+
+        // 3. IMPLEMENT SIMPLE RIPPLE
+        document.addEventListener('touchstart', (e) => {
+            createRipple(e.touches[0].clientX, e.touches[0].clientY);
+        }, {passive: true});
+
+        function createRipple(x, y) {
+            const ripple = document.createElement('div');
+            ripple.className = 'hh-touch-ripple';
+            ripple.style.left = `${x}px`;
+            ripple.style.top = `${y}px`;
+            document.body.appendChild(ripple);
+
+            requestAnimationFrame(() => {
+                ripple.classList.add('active');
+            });
+
+            setTimeout(() => {
+                ripple.style.opacity = '0';
+                setTimeout(() => ripple.remove(), 400);
+            }, 100);
         }
-
-        /* TOUCH RIPPLE EFFECT */
-        .hh-touch-ripple {
-            position: fixed; width: 40px; height: 40px;
-            background: radial-gradient(circle, rgba(124, 58, 237, 0.4) 0%, transparent 70%);
-            border: 1.5px solid rgba(6, 182, 212, 0.5);
-            border-radius: 50%; pointer-events: none; z-index: 999999;
-            transform: translate(-50%, -50%) scale(0.5); opacity: 0;
-            transition: transform 0.4s ease-out, opacity 0.4s ease-out;
-        }
-        .hh-touch-ripple.active { transform: translate(-50%, -50%) scale(1.5); opacity: 1; }
-    `;
-    document.head.appendChild(style);
-
-    // 2. DYNAMIC CLEANUP (Handle elements created by late-loading scripts)
-    const survivors = () => {
-        const killers = ['canvas', '.hero-mesh', '.orb', '.hero-lines', '#particles'];
-        killers.forEach(k => document.querySelectorAll(k).forEach(el => el.remove()));
-        
-        // Ensure body doesn't have a fixed height locked by a previous script
-        document.body.style.height = 'auto';
-        document.documentElement.style.height = 'auto';
-    };
-
-    survivors();
-    window.addEventListener('load', survivors);
-    document.addEventListener('DOMContentLoaded', survivors);
-    setInterval(survivors, 2000); // Rare cleanup for third-party injections
-
-    // 3. MOBILE MENU FIX (Ensures standard .open class logic)
-    const initMobileNav = () => {
-        const ham = document.querySelector('.hamburger');
-        const menu = document.querySelector('.mobile-menu');
-        if (!ham || !menu || ham.hasAttribute('data-hh-init')) return;
-        
-        ham.setAttribute('data-hh-init', 'true');
-        ham.onclick = (e) => {
-            e.preventDefault();
-            const isOpen = ham.classList.toggle('open');
-            menu.classList.toggle('open');
-            document.body.style.overflow = isOpen ? 'hidden' : '';
-        };
-
-        menu.querySelectorAll('a').forEach(a => {
-            a.onclick = () => {
-                ham.classList.remove('open');
-                menu.classList.remove('open');
-                document.body.style.overflow = '';
-            };
-        });
-    };
-
-    initMobileNav();
-    setTimeout(initMobileNav, 1000);
-
-    // 4. INTERACTIVE TOUCH RIPPLE
-    document.addEventListener('touchstart', (e) => {
-        const r = document.createElement('div');
-        r.className = 'hh-touch-ripple';
-        r.style.left = e.touches[0].clientX + 'px';
-        r.style.top = e.touches[0].clientY + 'px';
-        document.body.appendChild(r);
-        requestAnimationFrame(() => r.classList.add('active'));
-        setTimeout(() => { r.style.opacity = '0'; setTimeout(() => r.remove(), 400); }, 150);
-    }, {passive:true});
-
+    }
 })();
-
