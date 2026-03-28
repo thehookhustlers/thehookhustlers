@@ -114,7 +114,7 @@ body{background:var(--black);color:var(--white);font-family:'Rajdhani',sans-seri
 
 #particles{position:fixed;inset:0;z-index:0;pointer-events:none;}
 nav{position:fixed;top:0;left:0;right:0;z-index:100;display:flex;align-items:center;justify-content:space-between;padding:18px 64px;background:rgba(5,5,8,0.85);backdrop-filter:blur(24px);border-bottom:1px solid var(--border);}
-.nav-logo{font-family:'Bebas Neue',sans-serif;font-size:1.6rem;letter-spacing:.08em;background:linear-gradient(135deg,var(--vivid2),var(--cyan),var(--vivid));-webkit-background-clip:text;-webkit-text-fill-color:transparent;text-decoration:none;}
+.nav-logo{font-family:'Bebas Neue',sans-serif;font-size:1.6rem;letter-spacing:.08em;background:linear-gradient(135deg,var(--vivid2),var(--cyan),var(--vivid));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;text-decoration:none;}
 .nav-links{display:flex;gap:32px;}
 .nav-links a{font-family:'Rajdhani',sans-serif;font-size:.82rem;color:var(--muted);transition:color .2s;letter-spacing:.12em;text-transform:uppercase;font-weight:500;text-decoration:none;}
 .nav-links a[href="home.html"]{color:rgba(240,237,232,0.65);font-weight:600;}
@@ -201,7 +201,7 @@ footer{background:var(--deep);border-top:1px solid var(--border);padding:72px 64
 .inv-connect{background:linear-gradient(135deg,var(--vivid),var(--vivid2));color:var(--white);font-family:'Rajdhani',sans-serif;font-weight:700;font-size:.72rem;padding:7px 16px;border-radius:6px;letter-spacing:.06em;text-transform:uppercase;text-decoration:none;transition:all .2s;}
 .inv-connect:hover{transform:scale(1.04);}
 .inv-type-section{background:var(--deep);padding:60px 64px;}
-.inv-types{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:14px;max-width:1200px;margin:32px auto 0;}
+.inv-types{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:14px;max-width:1200px;margin:32px auto 0;justify-content:center;}
 .inv-type-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:24px;text-align:center;cursor:pointer;transition:all .3s;}
 .inv-type-card:hover{transform:translateY(-3px);border-color:rgba(124,58,237,0.3);}
 .inv-type-icon{font-size:2rem;margin-bottom:10px;display:block;}
@@ -337,7 +337,7 @@ nav .nav-logo:hover img {
 .nav-logo-text {
   background: linear-gradient(90deg, #a855f7, #06b6d4, #10d99d, #f43f5e, #a855f7);
   background-size: 300% auto;
-  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
   animation: textShimmer 5s linear infinite;
 }
 
@@ -366,10 +366,11 @@ nav .nav-logo:hover img {
 /* ── HERO BADGE pulse ── */
 .hero-badge { animation: pulseRing 2.5s ease infinite; }
 
-/* ── CARD HOVER ── applied via JS class toggle ── */
+/* Centered card hover effects are handled via JS */
 .flip-card, .vc-card, .value-card, .stat-box, .feat, .tier-card, .sector-card, .price-card, .step {
-  /* Will be upgraded to glow-card via JS below */
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
+
 
 /* ── TICKER DOTS rainbow ── */
 @keyframes rainbowDot {
@@ -1245,13 +1246,14 @@ h2 .cr-accent { color: #f43f5e !important; }
 
 <section style="background:var(--black);">
  <div class="sec-inner">
-  <div style="display:flex;align-items:flex-end;justify-content:space-between;flex-wrap:wrap;gap:20px;margin-bottom:40px;" class="reveal">
-   <div><div class="sec-label">All Investors</div><h2 class="sec-title">Investor Onboarding Open</h2></div>
+  <!-- ── ALL INVESTORS HEADING ── -->
+  <div style="display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:20px;margin-bottom:32px;text-align:center;" class="reveal">
+   <div><div class="sec-label" style="display:block;margin:0 auto 10px;">All Investors</div><h2 class="sec-title">Investor Onboarding Open</h2></div>
   </div>
+
   <div class="inv-grid">
-   <div style="grid-column:1/-1;background:var(--card);border:1px solid var(--border);border-radius:20px;padding:80px 40px;text-align:center;">
-    <div style="font-size:3rem;margin-bottom:20px;">💼</div>
-    <h3 style="font-family:'Bebas Neue',sans-serif;font-size:2rem;letter-spacing:.06em;margin-bottom:12px;">Investor Onboarding Open</h3>
+   <div style="grid-column:1/-1;background:var(--card);border:1px solid var(--border);border-radius:20px;padding:48px 24px;text-align:center;">
+    <div style="font-size:2.8rem;margin-bottom:16px;">💼</div>
     <p style="font-size:.92rem;color:var(--muted);max-width:520px;margin:0 auto 32px;line-height:1.85;">We are currently onboarding verified angels, VCs, corporate investors and government funds. Every investor is verified via LinkedIn and AUM documentation — no exceptions.</p>
     <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">
      <a href="login.html?next=signup" onclick="if(localStorage.getItem('hhLoggedIn')==='true'){event.preventDefault();window.location.href='dashboard.html';}" class="btn-primary">Join as Investor →</a>
@@ -1265,11 +1267,9 @@ h2 .cr-accent { color: #f43f5e !important; }
     </div>
    </div>
   </div>
-  <div style="text-align:center;margin-top:48px;">
-   <a href="login.html?next=signup" onclick="if(localStorage.getItem('hhLoggedIn')==='true'){event.preventDefault();window.location.href='dashboard.html';}" class="btn-primary">Join as Investor</a>
   </div>
- </div>
-</section>
+ </section>
+
 
 <!-- ── WHY JOIN EARLY ── -->
 <section style="background:var(--black);padding:100px 64px;">
