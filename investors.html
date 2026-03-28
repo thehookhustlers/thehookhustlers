@@ -20,6 +20,9 @@ html.is-logged-in .nav-btn-outline[href="signup.html"] { display:none !important
   nav{padding:10px 16px; display:flex; align-items:center;}
   .nav-logo{flex:1;}
   .nav-right{display:flex !important; align-items:center; gap:6px; margin-right:10px;}
+  .auth-only { display: none !important; }
+  html.is-logged-in .auth-only { display: block !important; }
+  html.is-logged-in .guest-only { display: none !important; }
   #nav-user-badge{margin-right:0;}
   .hamburger{flex-shrink:0;}
 }
@@ -132,7 +135,7 @@ nav{position:fixed;top:0;left:0;right:0;z-index:100;display:flex;align-items:cen
 .mobile-menu.open{opacity:1;pointer-events:all;}
 .mobile-menu a{font-family:'Bebas Neue',sans-serif;font-size:1.9rem;letter-spacing:.1em;color:var(--white);text-decoration:none;transition:color .2s;padding:10px 0;display:block;width:100%;text-align:center;}
 .mobile-menu a:hover{color:var(--vivid2);}
-.ticker-wrap{background:linear-gradient(90deg,#0a0f28,#0d0a2e,var(--navy));border-bottom:1px solid rgba(124,58,237,0.2);padding:9px 0;overflow:hidden;position:fixed;top:61px;left:0;right:0;z-index:10000;}
+.ticker-wrap{background:linear-gradient(90deg,#0a0f28,#0d0a2e,var(--navy));border-bottom:1px solid rgba(124,58,237,0.2);padding:9px 0;overflow:hidden;position:fixed;top:61px;left:0;right:0;z-index:10000;display:flex;justify-content:center;}
 .ticker{display:flex;gap:60px;animation:ticker 30s linear infinite;white-space:nowrap;}
 .ticker-item{font-family:'Rajdhani',sans-serif;font-size:.78rem;letter-spacing:.1em;color:rgba(240,237,232,0.6);display:flex;align-items:center;gap:8px;flex-shrink:0;}
 .ticker-item span{color:var(--emerald);font-weight:600;}
@@ -143,7 +146,7 @@ section{padding:80px 64px;position:relative;z-index:1;}
 .page-hero-lines{position:absolute;inset:0;z-index:0;background-image:linear-gradient(rgba(124,58,237,0.025) 1px,transparent 1px),linear-gradient(90deg,rgba(124,58,237,0.025) 1px,transparent 1px);background-size:80px 80px;mask-image:radial-gradient(ellipse 90% 90% at 50% 50%,black 0%,transparent 100%);}
 .page-hero-content{position:relative;z-index:1;max-width:800px;margin:0 auto;text-align:center;}
 .sec-label{display:inline-block;font-size:.72rem;letter-spacing:.18em;text-transform:uppercase;color:var(--vivid2);font-weight:600;margin-bottom:14px;font-family:'Rajdhani',sans-serif;text-align:center;margin-left:auto;margin-right:auto;}
-.sec-title{font-family:'Bebas Neue',sans-serif;font-size:clamp(2.4rem,5vw,4.5rem);letter-spacing:.04em;line-height:1;text-align:center;margin-left:auto;margin-right:auto;display:block;}
+.sec-title{font-family:'Bebas Neue',sans-serif;font-size:clamp(2.4rem,5vw,4.5rem);letter-spacing:.04em;line-height:1;text-align:center;margin:0 auto;display:block;}
 .sec-sub{margin-top:16px;color:var(--muted);max-width:600px;font-size:1rem;line-height:1.8;margin-left:auto;margin-right:auto;text-align:center;display:block;}
 .sec-inner{max-width:1200px;margin:0 auto;text-align:center;}
 .btn-primary{background:linear-gradient(135deg,var(--vivid),var(--vivid2));color:var(--white);font-family:'Rajdhani',sans-serif;font-weight:700;font-size:.9rem;padding:15px 36px;border-radius:8px;letter-spacing:.08em;text-transform:uppercase;text-decoration:none;transition:all .25s;display:inline-block;}
@@ -1166,12 +1169,14 @@ h2 .cr-accent { color: #f43f5e !important; }
 <div class="cursor-ring" id="cursorRing"></div>
 <canvas id="particles"></canvas>
 <div class="mobile-menu" id="mobileMenu">
+ <a href="dashboard.html" class="auth-only" style="color:var(--cyan);">Dashboard</a>
  <a href="home.html" onclick="closeMobile()">Home</a>
  <a href="startups.html" onclick="closeMobile()">Startups</a>
  <a href="investors.html" class="active" onclick="closeMobile()">Investors</a>
  <a href="about.html" onclick="closeMobile()">About</a>
  <a href="contact.html" onclick="closeMobile()">Contact</a>
- <a href="login.html?next=signup" onclick="closeMobile()" style="color:var(--vivid2)">Join Now →</a>
+ <a href="login.html?next=signup" class="guest-only" onclick="closeMobile()" style="color:var(--vivid2)">Join Now →</a>
+ <a href="#" class="auth-only" onclick="window.supabaseClient.auth.signOut();closeMobile();" style="color:var(--crimson);">Sign Out</a>
 </div>
 <nav>
  <a href="home.html" class="nav-logo" style="display:flex;align-items:center;gap:10px;text-decoration:none;">
@@ -1186,8 +1191,10 @@ h2 .cr-accent { color: #f43f5e !important; }
   <a href="contact.html">Contact</a>
  </div>
  <div class="nav-right">
-  <a href="login.html" class="nav-btn nav-btn-outline">Login</a>
-  <a href="login.html?next=signup" onclick="if(localStorage.getItem('hhLoggedIn')==='true'){event.preventDefault();window.location.href='dashboard.html';}" class="nav-btn nav-btn-gold">Join Now</a>
+  <a href="login.html" class="nav-btn nav-btn-outline guest-only">Login</a>
+  <a href="login.html?next=signup" class="nav-btn nav-btn-gold guest-only">Join Now</a>
+  <a href="dashboard.html" class="nav-btn nav-btn-outline auth-only" style="border-color:var(--cyan);color:var(--cyan);">Dashboard</a>
+  <button onclick="window.supabaseClient.auth.signOut().then(()=>{localStorage.removeItem('hhLoggedIn');window.location.href='home.html'})" class="nav-btn auth-only" style="background:rgba(244,63,94,0.1);color:var(--crimson);border:1px solid rgba(244,63,94,0.4);cursor:pointer;">Sign Out</button>
  </div>
  <button class="hamburger" id="hamburger"><span></span><span></span><span></span></button>
 </nav>
@@ -1217,7 +1224,7 @@ h2 .cr-accent { color: #f43f5e !important; }
  <div class="page-hero-mesh"></div><div class="page-hero-lines"></div>
  <div class="page-hero-content">
  <div class="sec-label" style="animation:fadeUp .7s .1s ease both;opacity:0;display:block;margin:0 auto 14px;">Investor Network</div>
-  <h1 class="sec-title" style="animation:fadeUp .7s .2s ease both;opacity:0;">India's Most Verified<br/>Investor Directory</h1>
+  <h1 class="sec-title" style="animation:fadeUp .7s .2s ease both;opacity:0;">India's Most <span style="color:var(--emerald);">Verified</span> <br/> Investor Directory</h1>
   <p class="sec-sub" style="animation:fadeUp .7s .3s ease both;opacity:0;">Every investor on The Hook Hustlers is verified via LinkedIn + AUM proof. Angels, VCs, PE firms, corporate investors, and government funds — all in one place.</p>
  </div>
 </div>
@@ -1727,16 +1734,8 @@ function claimInvestorSpot(){
 </footer>
 <script>// SHARED JS FOR ALL PAGES
 document.addEventListener('DOMContentLoaded', function() {
- // CURSOR
- const cursor = document.getElementById('cursor');
- const ring = document.getElementById('cursorRing');
- if(cursor && ring) {
-  document.addEventListener('mousemove', e => {
-   cursor.style.left = e.clientX + 'px';
-   cursor.style.top = e.clientY + 'px';
-   ring.style.left = e.clientX + 'px'; ring.style.top = e.clientY + 'px';
-  });
- }
+ // DEPRECATED - Now handled by Vivid Cursor System (line 1785+)
+
 
  // PARTICLES
  const canvas = document.getElementById('particles');
@@ -1795,12 +1794,13 @@ document.addEventListener('DOMContentLoaded', function() {
  // New cursor dot
  const hhCursor = document.createElement('div');
  hhCursor.id = 'hh-cursor';
- document.body.appendChild(hhCursor);
+  const fxContainer = document.getElementById('hh-fx-canvas') || document.body;
+  fxContainer.appendChild(hhCursor);
 
  // New cursor ring
  const hhRing = document.createElement('div');
  hhRing.id = 'hh-ring';
- document.body.appendChild(hhRing);
+ fxContainer.appendChild(hhRing);
 
  // Background glow
  const bgGlow = document.getElementById('hh-bg-glow') || document.createElement('div');
@@ -1821,7 +1821,8 @@ document.addEventListener('DOMContentLoaded', function() {
    const alpha = Math.max(0.05, 0.75 - i*(0.75/TRAIL_COUNT));
    const col = TRAIL_COLORS[Math.floor(i/(TRAIL_COUNT/TRAIL_COLORS.length))];
    d.style.cssText = `width:${size}px;height:${size}px;background:${col}${alpha.toFixed(2)});box-shadow:0 0 ${size*2}px ${col}${(alpha*0.8).toFixed(2)});`;
-   document.documentElement.appendChild(d);
+   const fxContainer = document.getElementById('hh-fx-canvas') || document.body;
+   fxContainer.appendChild(d);
    trailDots.push({el:d, x:window.innerWidth/2, y:window.innerHeight/2});
  }
 
@@ -1970,490 +1971,77 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 <script>
-/* ══ ANIMATION BOOST ══ */
-(function(){
-  // 1. Inject floating orbs into hero/first section
-  const hero = document.querySelector('.hero, section:first-of-type, .page-hero, main > section:first-child');
-  if(hero && !hero.querySelector('.orb-1')){
-    hero.style.position='relative'; hero.style.overflow='hidden';
-    ['orb-1','orb-2','orb-3','orb-4'].forEach(cls=>{
-      const o=document.createElement('div'); o.className='orb '+cls; hero.appendChild(o);
-    });
-  }
+/** 
+ * THE HOOK HUSTLERS - REFINED CORE UX
+ * Manages: Reveals, Counters, Auth Sync, Back-to-Top
+ */
+(function hhCore() {
+    // 1. Reveal Animations
+    const revealObs = new IntersectionObserver((entries) => {
+        entries.forEach(e => {
+            if (e.isIntersecting) {
+                e.target.classList.add('visible');
+                revealObs.unobserve(e.target);
+            }
+        });
+    }, { threshold: 0.1 });
 
-  // 2. Add rainbow skew band before footer
-  const footer = document.querySelector('footer');
-  if(footer && !document.querySelector('.skew-band')){
-    const band=document.createElement('div'); band.className='skew-band'; footer.before(band);
-  }
+    // 2. Performance Counters
+    const countObs = new IntersectionObserver((entries) => {
+        entries.forEach(e => {
+            if (e.isIntersecting) {
+                const el = e.target;
+                const target = parseInt(el.dataset.target || 0);
+                if (!target) return;
+                let current = 0;
+                const step = target / 60;
+                const timer = setInterval(() => {
+                    current += step;
+                    if (current >= target) { current = target; clearInterval(timer); }
+                    el.textContent = (el.dataset.prefix||'') + Math.floor(current).toLocaleString('en-IN') + (el.dataset.suffix||'');
+                }, 16);
+                countObs.unobserve(el);
+            }
+        });
+    }, { threshold: 0.5 });
 
-  // 3. Add revealing left/right to alternating section children
-  document.querySelectorAll('section').forEach((sec,si)=>{
-    const children = sec.querySelectorAll('.feat,.vc-card,.value-card,.step,.tier-card,.sector-card,.price-card,.tl-item');
-    children.forEach((el,i)=>{
-      if(!el.classList.contains('reveal')){
-        el.classList.add(i%2===0?'reveal-left':'reveal-right');
-      }
-    });
-  });
-
-  // 4. Observe the new reveal-left / reveal-right classes
-  const revObs = new IntersectionObserver((entries)=>{
-    entries.forEach(e=>{
-      if(e.isIntersecting){
-        setTimeout(()=>{
-          e.target.classList.add('visible');
-        }, 80);
-        revObs.unobserve(e.target);
-      }
-    });
-  },{threshold:0.08, rootMargin:'0px 0px -20px 0px'});
-  document.querySelectorAll('.reveal-left,.reveal-right,.reveal-scale').forEach(el=>revObs.observe(el));
-
-  // 5. 3D tilt effect on cards
-  document.querySelectorAll('.glow-card,.flip-card,.value-card').forEach(card=>{
-    card.addEventListener('mousemove',e=>{
-      const r=card.getBoundingClientRect();
-      const x=(e.clientX-r.left)/r.width-0.5;
-      const y=(e.clientY-r.top)/r.height-0.5;
-      card.style.transform=`translateY(-6px) rotateX(${(-y*8).toFixed(1)}deg) rotateY(${(x*8).toFixed(1)}deg) scale(1.01)`;
-    });
-    card.addEventListener('mouseleave',()=>{ card.style.transform=''; });
-  });
-
-  // 6. Sparkle emitters on logo and hero badge
-  function addSparkle(parent, colorClass, count){
-    if(!parent) return;
-    for(let i=0;i<count;i++){
-      const sp=document.createElement('span');
-      sp.className='sparkle '+colorClass;
-      sp.style.cssText=`left:${10+Math.random()*80}%;top:${10+Math.random()*80}%;`;
-      if(sp.querySelector) {
-        sp.style.animationDelay=(Math.random()*3)+'s';
-        sp.style.fontSize=(8+Math.random()*8)+'px';
-      }
-      parent.style.position='relative'; parent.style.overflow='visible';
-      parent.appendChild(sp);
+    // 3. Auth State Sync (Standardized on html.is-logged-in)
+    async function initAuth() {
+        if(!window.supabaseClient) return;
+        const { data: { session } } = await window.supabaseClient.auth.getSession();
+        const update = (s) => {
+            document.documentElement.classList.toggle('is-logged-in', !!s);
+            if(s) localStorage.setItem('hhLoggedIn', 'true');
+            else localStorage.removeItem('hhLoggedIn');
+        };
+        update(session || (localStorage.getItem('hhLoggedIn')==='true' ? {user:true} : null));
+        window.supabaseClient.auth.onAuthStateChange((_e, s) => update(s));
     }
-  }
-  const logoBadge = document.querySelector('.nav-logo');
-  if(logoBadge) addSparkle(logoBadge, 'sparkle-em', 3);
 
-  // 7. Color-cycling hero gradient text (if hero h1 found)
-  const heroH1 = document.querySelector('.hero h1, .page-hero h1');
-  if(heroH1){
-    const spans = heroH1.querySelectorAll('span');
-    const PARTICLE_COLORS = ['rgba(124,58,237,','rgba(168,85,247,','rgba(6,182,212,','rgba(16,217,157,','rgba(244,63,94,'];
-    spans.forEach((sp,i)=>{
-      const c = PARTICLE_COLORS[i % PARTICLE_COLORS.length];
-      if(sp.classList.contains('word-vi') || sp.classList.contains('word-cy') || sp.classList.contains('word-em') || sp.classList.contains('word-cr')) {
-         // keep original classes for typewriter logic
-      }
-    });
-  }
+    // 4. Initializer
+    document.addEventListener('DOMContentLoaded', () => {
+        document.querySelectorAll('.reveal, .inv-card').forEach(el => revealObs.observe(el));
+        document.querySelectorAll('[data-target]').forEach(el => countObs.observe(el));
+        initAuth();
 
-  // 8. Override window particle creation if exists
-  if(window.particles && Array.isArray(window.particles)){
-    const P_COLORS = ['#7c3aed','#06b6d4','#10d99d','#f43f5e'];
-    window.particles.forEach((p,i)=>{
-      p.color = P_COLORS[i % P_COLORS.length];
-    });
-  }
-
-  /* 5. BACK-TO-TOP BUTTON */
-  if(!document.getElementById('hh-top')){
-    const btn = document.createElement('button');
-    btn.id = 'hh-top';
-    btn.setAttribute('aria-label','Back to top');
-    btn.innerHTML = '↑';
-    document.documentElement.appendChild(btn);
-    window.addEventListener('scroll', ()=>{
-      btn.classList.toggle('show', window.scrollY > 400);
-    }, {passive:true});
-    btn.addEventListener('click', ()=>{ window.scrollTo({top:0, behavior:'smooth'}); });
-  }
-
-  /* 6. PAGE TRANSITION FADE */
-  document.querySelectorAll('a[href]').forEach(link=>{
-    const href = link.getAttribute('href');
-    // Only local HTML links
-    if(!href || href.startsWith('#') || href.startsWith('mailto') || href.startsWith('tel') || href.startsWith('http') || href.startsWith('javascript')) return;
-    if(!href.endsWith('.html') && !href.match(/\.html\?/)) return;
-    link.addEventListener('click', e=>{
-      e.preventDefault();
-      document.body.classList.add('page-exit');
-      setTimeout(()=>{ window.location.href = href; }, 280);
-    });
-  });
-
-  /* 7. MOBILE MENU — already CSS handled, just ensure JS still works */
-  // The CSS handles the slide transform, no JS changes needed
-
-  /* 8. INPUT FLOAT LABELS */
-  document.querySelectorAll('input, textarea').forEach(inp=>{
-    const group = inp.closest('.form-group');
-    if(!group) return;
-    const check = ()=> group.classList.toggle('has-value', inp.value.length > 0);
-    inp.addEventListener('input', check);
-    check();
-  });
-
-  /* 9. NAV ACTIVE DOT — already CSS */
-
-  /* 11. IMAGE LAZY LOADING */
-  document.querySelectorAll('img:not([loading])').forEach(img=>{
-    img.setAttribute('loading','lazy');
-  });
-
-  /* BONUS: Intersection-based particle shimmer effect on stat nums */
-  const countEls = document.querySelectorAll('.stat-num, [data-target]');
-  if(countEls.length){
-    const co = new IntersectionObserver(entries=>{
-      entries.forEach(e=>{
-        if(e.isIntersecting){
-          e.target.style.animation='none';
-          requestAnimationFrame(()=>{
-            e.target.style.animation='floatUp 3s ease-in-out infinite, countGlow 0.8s ease';
-          });
+        // Back to top
+        if(!document.getElementById('hh-top')){
+            const btn = document.createElement('button'); btn.id = 'hh-top'; btn.innerHTML = '↑';
+            document.body.appendChild(btn);
+            window.addEventListener('scroll', () => btn.classList.toggle('show', window.scrollY > 400), {passive:true});
+            btn.addEventListener('click', () => window.scrollTo({top:0, behavior:'smooth'}));
         }
-      });
-    },{threshold:0.5});
-    countEls.forEach(el=>co.observe(el));
-  }
+    });
 
+    // Share closeMobile globally
+    window.closeMobile = function() {
+        const h = document.getElementById('hamburger'), m = document.getElementById('mobileMenu');
+        if(h && m){ h.classList.remove('open'); m.classList.remove('open'); document.body.style.overflow=''; }
+    };
 })();
 </script>
-
-
-<script>
-/* ════ FINAL PREMIUM LAYER ════ */
-(function finalLayer(){
-
-  /* ── 1. AURORA BACKGROUND ── */
-  if(!document.getElementById('hh-aurora')){
-    const aurora = document.createElement('div');
-    aurora.id = 'hh-aurora';
-    aurora.innerHTML =
-      '<div class="aurora-blob aurora-blob-1"></div>' +
-      '<div class="aurora-blob aurora-blob-2"></div>';
-    document.documentElement.appendChild(aurora);
-  }
-
-  /* ── 3. CONNECTED PARTICLE NETWORK ── */
-  // Upgrade existing canvas: draw lines between nearby particles
-  const canvas = document.getElementById('particleCanvas') || document.querySelector('canvas');
-  if(canvas && !canvas._networkPatched){
-    canvas._networkPatched = true;
-    const ctx = canvas.getContext('2d');
-    const NET_DIST = 110; // max distance for line
-
-    // Monkey-patch requestAnimationFrame to draw network lines after each frame
-    const _raf = window.requestAnimationFrame.bind(window);
-    function drawNetworkLines(){
-      if(!window.particles || !Array.isArray(window.particles)) return;
-      const pts = window.particles;
-      for(let i=0;i<pts.length;i++){
-        for(let j=i+1;j<pts.length;j++){
-          const dx = pts[i].x - pts[j].x;
-          const dy = pts[i].y - pts[j].y;
-          const dist = Math.sqrt(dx*dx + dy*dy);
-          if(dist < NET_DIST){
-            const alpha = (1 - dist/NET_DIST) * 0.18;
-            // Color cycle based on index
-            const cols = [
-              `rgba(124,58,237,${alpha})`,
-              `rgba(6,182,212,${alpha})`,
-              `rgba(16,217,157,${alpha})`,
-              `rgba(244,63,94,${alpha})`
-            ];
-            ctx.beginPath();
-            ctx.moveTo(pts[i].x, pts[i].y);
-            ctx.lineTo(pts[j].x, pts[j].y);
-            ctx.strokeStyle = cols[(i+j) % cols.length];
-            ctx.lineWidth = 0.5;
-            ctx.stroke();
-          }
-        }
-      }
-    }
-
-    // Wrap animateParticles if defined
-    if(typeof window.animateParticles === 'function'){
-      const _orig = window.animateParticles;
-      window.animateParticles = function(){
-        _orig();
-        drawNetworkLines();
-      };
-    } else {
-      // Fallback: hook into rAF loop
-      (function netLoop(){
-        drawNetworkLines();
-        requestAnimationFrame(netLoop);
-      })();
-    }
-  }
-
-  /* ── 2. TYPEWRITER HERO H1 ── */
-  const heroH1 = document.querySelector('.hero h1, .page-hero h1, section:first-of-type h1');
-  if(heroH1 && !heroH1._tw){
-    heroH1._tw = true;
-    const fullText = heroH1.textContent.trim();
-    const colorWords = {
-      'IDEAS':  'word-vi', 'MEET':  'word-cy',
-      'BOLD':   'word-cr', 'CAPITAL':'word-em',
-      'STARTUPS':'word-em','INVESTORS':'word-vi',
-      'FUNDING':'word-cr', 'INDIA': 'word-cy',
-      'PREMIUM':'word-vi', 'LAUNCH':'word-em',
-    };
-    // Clear and build colored word spans first
-    heroH1.innerHTML = '';
-    const words = fullText.split(/\s+/);
-    const wordEls = [];
-    words.forEach((w,i)=>{
-      const span = document.createElement('span');
-      const cls = colorWords[w.toUpperCase()];
-      if(cls) span.className = cls;
-      span.style.visibility = 'hidden';
-      span.textContent = (i>0?' ':'')+w;
-      heroH1.appendChild(span);
-      wordEls.push(span);
-    });
-
-    // Add blinking cursor
-    const cur = document.createElement('span');
-    cur.className = 'hh-typewriter-cursor';
-    heroH1.appendChild(cur);
-
-    // Reveal words one by one with delay
-    wordEls.forEach((el,i)=>{
-      setTimeout(()=>{
-        el.style.visibility = 'visible';
-        el.style.animation = 'pageFadeIn 0.3s ease';
-      }, 800 + i * 120);
-    });
-    // Remove cursor after all words
-    setTimeout(()=>{ cur.style.animation = 'none'; cur.style.opacity='0'; }, 800 + wordEls.length*120 + 1200);
-  }
-
-  /* ── 4. FORM VALIDATION ── */
-  document.querySelectorAll('input[type=text],input[type=email],input[type=tel],textarea').forEach(inp=>{
-    // Add hint span if not there
-    const group = inp.parentElement;
-    if(group && !group.querySelector('.field-hint')){
-      const hint = document.createElement('span');
-      hint.className = 'field-hint';
-      group.appendChild(hint);
-    }
-
-    inp.addEventListener('blur', ()=>{
-      const hint = inp.parentElement ? inp.parentElement.querySelector('.field-hint') : null;
-      const val = inp.value.trim();
-
-      if(val.length === 0){
-        inp.classList.remove('valid','invalid');
-        if(hint){ hint.textContent=''; }
-        return;
-      }
-
-      let ok = true;
-      let msg = '';
-      if(inp.type === 'email'){
-        ok = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val);
-        msg = ok ? '✓ Looks good!' : '✕ Enter a valid email address';
-      } else if(inp.type === 'tel'){
-        ok = /^[+]?[0-9\s\-]{8,}$/.test(val);
-        msg = ok ? '✓ Looks good!' : '✕ Enter a valid phone number';
-      } else {
-        ok = val.length >= 2;
-        msg = ok ? '✓ Looks good!' : '✕ Too short';
-      }
-
-      inp.classList.toggle('valid', ok);
-      inp.classList.toggle('invalid', !ok);
-      if(hint){ hint.textContent = msg; }
-    });
-  });
-
-  /* ── 5. TOAST SYSTEM ── */
-  if(!document.getElementById('hh-toast-container')){
-    const tc = document.createElement('div');
-    tc.id = 'hh-toast-container';
-    document.documentElement.appendChild(tc);
-  }
-
-  window.hhToast = function(msg, type='info', duration=4000){
-    const tc = document.getElementById('hh-toast-container');
-    const t = document.createElement('div');
-    const icons = {success:'✅', error:'❌', info:'💜'};
-    t.className = 'hh-toast ' + type;
-    t.innerHTML = '<span class="hh-toast-icon">'+icons[type]+'</span>' + msg;
-    tc.appendChild(t);
-    requestAnimationFrame(()=>{ requestAnimationFrame(()=>{ t.classList.add('show'); }); });
-    setTimeout(()=>{
-      t.classList.remove('show');
-      setTimeout(()=>t.remove(), 500);
-    }, duration);
-  };
-
-  // Auto-hook contact/signup forms
-  document.querySelectorAll('form').forEach(form=>{
-    form.addEventListener('submit', function(e){
-      // Don't stop default here — just show toast
-      setTimeout(()=>{ window.hhToast("Message sent! We'll be in touch soon. 🚀", 'success'); }, 100);
-    });
-  });
-
-  /* ── 6. SCROLL-TRIGGERED COUNTER ANIMATION ── */
-  function animateCount(el, target, prefix, suffix){
-    if(el._counting) return;
-    el._counting = true;
-    el.classList.add('counting');
-    const dur = 1800;
-    const start = performance.now();
-    const step = (now)=>{
-      const pct = Math.min(1, (now-start)/dur);
-      // Ease out cubic
-      const ease = 1 - Math.pow(1-pct, 3);
-      const val = Math.round(ease * target);
-      el.textContent = (prefix||'') + val.toLocaleString('en-IN') + (suffix||'');
-      if(pct < 1) requestAnimationFrame(step);
-      else el.classList.remove('counting');
-    };
-    requestAnimationFrame(step);
-  }
-
-  const statEls = document.querySelectorAll('[data-target]');
-  if(statEls.length){
-    const cObs = new IntersectionObserver(entries=>{
-      entries.forEach(e=>{
-        if(e.isIntersecting){
-          const el = e.target;
-          const raw = el.getAttribute('data-target');
-          const num = parseFloat(raw.replace(/[^0-9.]/g,''));
-          const prefix = raw.match(/^[^0-9]*/)?.[0] || '';
-          const suffix = raw.match(/[^0-9.]+$/)?.[0] || '';
-          if(num > 0) animateCount(el, num, prefix, suffix);
-          cObs.unobserve(el);
-        }
-      });
-    }, {threshold: 0.6});
-    statEls.forEach(el=>cObs.observe(el));
-  }
-
-  /* ── 7. META THEME-COLOR ── */
-  if(!document.querySelector('meta[name=theme-color]')){
-    const m = document.createElement('meta');
-    m.name = 'theme-color'; m.content = '#04040b';
-    document.head.appendChild(m);
-  }
-
-  /* ── 9. CRIMSON IN SECTION HEADINGS ── */
-  // Find key words in h2/h3 headings and add crimson accent class
-  const crimsonWords = ['real','gap','problem','only','broken','failed','missed','vs','or','no'];
-  const emeraldWords = ['verify','verified','launch','grow','connect','invest','match','win','join','free'];
-  document.querySelectorAll('h2, h3').forEach(h=>{
-    const text = h.innerHTML;
-    let newText = text;
-    crimsonWords.forEach(w=>{
-      const rx = new RegExp('\\b('+w+')\\b','gi');
-      newText = newText.replace(rx, '<span class="cr">$1</span>');
-    });
-    emeraldWords.forEach(w=>{
-      const rx = new RegExp('\\b('+w+')\\b','gi');
-      newText = newText.replace(rx, '<span class="em">$1</span>');
-    });
-    if(newText !== text) h.innerHTML = newText;
-  });
-
-})();
-</script>
-
-
-
-
-
-
-
-
-<!-- GLOBAL AUTO-LOGIN TICKER -->
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="supabase-client.js"></script>
-<script>
-  document.addEventListener('DOMContentLoaded', async () => {
-    if(typeof window.supabaseClient === 'undefined') return;
-    
-    // Initial check
-    const { data: { session } } = await window.supabaseClient.auth.getSession();
-    const hasLocalLogin = localStorage.getItem('hhLoggedIn') === 'true';
-    updateAuthUI(session || (hasLocalLogin ? {user:true} : null));
-
-    // Listen for changes
-    window.supabaseClient.auth.onAuthStateChange((_event, session) => {
-      updateAuthUI(session);
-    });
-
-    function updateAuthUI(session) {
-      const navRight = document.querySelector('.nav-right');
-      const navLinks = document.querySelector('.nav-links');
-      const mobileMenu = document.querySelector('.mobile-menu');
-
-      if(session) {
-        localStorage.setItem('hhLoggedIn', 'true');
-        if(navRight) {
-          navRight.innerHTML = `
-            <a href="dashboard.html" class="nav-btn nav-btn-outline" style="border-color:var(--cyan);color:var(--cyan);margin-right:12px;">Dashboard</a>
-            <button onclick="window.supabaseClient.auth.signOut().then(()=>{localStorage.removeItem('hhLoggedIn');window.location.href='home.html'})" class="nav-btn nav-btn-solid" style="background:rgba(244,63,94,0.1);color:var(--crimson);border:1px solid rgba(244,63,94,0.4);">Sign Out</button>
-          `;
-        }
-        if(navLinks) {
-          // Remove duplicate Dashboard from main bar
-          navLinks.querySelectorAll('a[href="dashboard.html"]').forEach(el => el.remove());
-          if(!navLinks.innerHTML.includes('pricing.html')) {
-            const priceLink = document.createElement('a');
-            priceLink.href = 'pricing.html';
-            priceLink.textContent = 'Pricing';
-            priceLink.style.color = 'var(--vivid2)';
-            navLinks.appendChild(priceLink);
-          }
-        }
-        if(mobileMenu) {
-          if(!mobileMenu.innerHTML.includes('dashboard.html')) {
-            const mDash = document.createElement('a');
-            mDash.href = 'dashboard.html';
-            mDash.textContent = 'Dashboard';
-            mDash.style.color = 'var(--cyan)';
-            mobileMenu.insertBefore(mDash, mobileMenu.firstChild);
-          }
-          if(!mobileMenu.innerHTML.includes('pricing.html')) {
-            const mPrice = document.createElement('a');
-            mPrice.href = 'pricing.html';
-            mPrice.textContent = 'Pricing';
-            mPrice.style.color = 'var(--vivid2)';
-            const aboutL = Array.from(mobileMenu.children).find(a => a.href.includes('about.html'));
-            if(aboutL) mobileMenu.insertBefore(mPrice, aboutL);
-          }
-          // Join -> Sign Out
-          const joinBtn = Array.from(mobileMenu.querySelectorAll('a')).find(a => a.href.includes('login.html') || a.textContent.toLowerCase().includes('join'));
-          if(joinBtn) {
-            joinBtn.innerHTML = 'SIGN OUT';
-            joinBtn.style.color = 'var(--crimson)';
-            joinBtn.href = '#';
-            joinBtn.onclick = (e) => {
-              e.preventDefault();
-              window.supabaseClient.auth.signOut().then(() => {
-                localStorage.removeItem('hhLoggedIn');
-                window.location.href = 'home.html';
-              });
-            };
-          }
-        }
-      } else {
-        localStorage.removeItem('hhLoggedIn');
-      }
-    }
-  });
-</script>
-
+\n
+  <div id="hh-fx-canvas" style="position:fixed;inset:0;z-index:-1;overflow:hidden;pointer-events:none;"></div>
   <script src="hh-ux-effects.js"></script>
 </body>
 </html>
