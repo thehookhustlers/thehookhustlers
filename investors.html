@@ -13,9 +13,12 @@
 if(localStorage.getItem('hhLoggedIn')==='true'){document.documentElement.classList.add('is-logged-in');}
 </script>
 <style>
-/* Hide Login button instantly when logged in — no flash */
+/* ── AUTH STATE VISIBILITY ── */
+html:not(.is-logged-in) .auth-only { display: none !important; }
+html.is-logged-in .guest-only { display: none !important; }
 html.is-logged-in .nav-btn-outline[href="login.html"],
-html.is-logged-in .nav-btn-outline[href="signup.html"] { display:none !important; }
+html.is-logged-in .nav-btn-gold[href="login.html?next=signup"] { display:none !important; }
+
 @media(max-width:768px){
   nav{padding:10px 16px; display:flex; align-items:center;}
   .nav-logo{flex:1;}
@@ -140,8 +143,8 @@ nav{position:fixed;top:0;left:0;right:0;z-index:100;display:flex;align-items:cen
 .ticker-item{font-family:'Rajdhani',sans-serif;font-size:.78rem;letter-spacing:.1em;color:rgba(240,237,232,0.6);display:flex;align-items:center;gap:8px;flex-shrink:0;}
 .ticker-item span{color:var(--emerald);font-weight:600;}
 .ticker-item .dot{width:5px;height:5px;border-radius:50%;background:var(--vivid2);flex-shrink:0;}
-section{padding:40px 64px;position:relative;z-index:1;}
-.page-hero{padding:90px 64px 20px;position:relative;z-index:1;overflow:hidden;}
+section{padding:32px 64px;position:relative;z-index:1;}
+.page-hero{padding:100px 64px 20px;position:relative;z-index:1;overflow:hidden;}
 .page-hero-mesh{position:absolute;inset:0;z-index:0;background:radial-gradient(ellipse 80% 60% at 50% 0%,rgba(124,58,237,0.09) 0%,transparent 70%),radial-gradient(ellipse 50% 40% at 10% 80%,rgba(6,182,212,0.05) 0%,transparent 60%);}
 .page-hero-lines{position:absolute;inset:0;z-index:0;background-image:linear-gradient(rgba(124,58,237,0.025) 1px,transparent 1px),linear-gradient(90deg,rgba(124,58,237,0.025) 1px,transparent 1px);background-size:80px 80px;mask-image:radial-gradient(ellipse 90% 90% at 50% 50%,black 0%,transparent 100%);}
 .page-hero-content{position:relative;z-index:1;max-width:800px;margin:0 auto;text-align:center;}
@@ -1255,7 +1258,7 @@ h2 .cr-accent { color: #f43f5e !important; }
 
 
   <div class="inv-grid">
-   <div style="grid-column:1/-1;background:var(--card);border:1px solid var(--border);border-radius:20px;padding:40px 24px;text-align:center;">
+   <div class="reveal" style="grid-column:1/-1;background:var(--card);border:1px solid var(--border);border-radius:20px;padding:40px 24px;text-align:center;">
     <div style="font-size:2.8rem;margin-bottom:16px;">💼</div>
     <p style="font-size:.92rem;color:var(--muted);max-width:520px;margin:0 auto 32px;line-height:1.85;">We are currently onboarding verified angels, VCs, corporate investors and government funds. Every investor is verified via LinkedIn and AUM documentation — no exceptions.</p>
     <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">
@@ -2038,11 +2041,12 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // 5. Desktop Cursor
+    // 5. Unified Desktop Cursor (Match Home Page)
     const cursor = document.getElementById('cursor');
     const ring = document.getElementById('cursorRing');
     if(cursor && ring && window.innerWidth > 768){
-        document.addEventListener('mousemove', e => {
+        document.body.style.cursor = 'none';
+        document.addEventListener('mousemove', (e) => {
             cursor.style.left = e.clientX + 'px';
             cursor.style.top = e.clientY + 'px';
             setTimeout(() => {
@@ -2059,6 +2063,7 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 })();
 </script>
+
 \n
   <div id="hh-fx-canvas" style="position:fixed;inset:0;z-index:-1;overflow:hidden;pointer-events:none;"></div>
   <script src="hh-ux-effects.js"></script>
